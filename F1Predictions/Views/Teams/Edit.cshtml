@@ -1,0 +1,60 @@
+@model Team
+
+@{
+    ViewData["Title"] = "Edit Team";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Team
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-semibold">
+                                Team Name <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Name" class="form-control" placeholder="e.g., Mercedes-AMG Petronas" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="DisplayName" class="form-label fw-semibold">
+                                Display Name <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="DisplayName" class="form-control" placeholder="e.g., Mercedes" />
+                            <span asp-validation-for="DisplayName" class="text-danger small"></span>
+                            <div class="form-text">Short name used in standings and results</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="BaseCountry" class="form-label fw-semibold">Base Country</label>
+                            <input asp-for="BaseCountry" class="form-control" placeholder="e.g., United Kingdom" />
+                            <span asp-validation-for="BaseCountry" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-lg me-1"></i>Update Team
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Back to List
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

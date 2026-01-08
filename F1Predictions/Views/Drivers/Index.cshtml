@@ -1,0 +1,124 @@
+﻿@model List<Driver>
+
+@{
+    ViewData["Title"] = "Drivers";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-people-fill me-2"></i>F1 Drivers
+        </h1>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Add Driver
+        </a>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col" style="width: 60px;">#</th>
+                                <th scope="col">Driver Name</th>
+                                <th scope="col" class="text-center" style="width: 120px;">Number</th>
+                                <th scope="col">Nationality</th>
+                                <th scope="col" class="text-end" style="width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var driver in Model)
+                            {
+                                <tr>
+                                    <td class="text-muted">@driver.Id</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                                 style="width: 40px; height: 40px; min-width: 40px;">
+                                                <span class="text-white fw-bold">@driver.FirstName[0]@driver.LastName[0]</span>
+                                            </div>
+                                            <div>
+                                                <span class="fw-semibold">@driver.FirstName @driver.LastName</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary fs-6 px-3 py-2">@driver.ChampionshipNumber</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">@(driver.Nationality ?? "—")</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Details" asp-route-id="@driver.Id" class="btn btn-sm btn-outline-info" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@driver.Id" class="btn btn-sm btn-outline-warning" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    data-bs-toggle="modal" data-bs-target="#deleteModal-@driver.Id" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-light">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Showing @Model.Count driver(s)
+                </small>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-person-x display-1 text-muted mb-3"></i>
+                <h4 class="text-muted">No Drivers Found</h4>
+                <p class="text-muted mb-4">Get started by adding your first F1 driver.</p>
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>Add Your First Driver
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Delete Confirmation Modals -->
+@foreach (var driver in Model)
+{
+    <div class="modal fade" id="deleteModal-@driver.Id" tabindex="-1" aria-labelledby="deleteModalLabel-@driver.Id" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel-@driver.Id">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Confirm Delete
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Are you sure you want to delete <strong>@driver.FirstName @driver.LastName</strong>?</p>
+                    <p class="text-muted small mb-0 mt-2">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form asp-action="Delete" asp-route-id="@driver.Id" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}

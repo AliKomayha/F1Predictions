@@ -1,0 +1,120 @@
+@model List<Track>
+
+@{
+    ViewData["Title"] = "Tracks";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-geo-alt-fill me-2"></i>F1 Tracks
+        </h1>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Add Track
+        </a>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col" style="width: 60px;">#</th>
+                                <th scope="col">Track Name</th>
+                                <th scope="col">City</th>
+                                <th scope="col">Country</th>
+                                <th scope="col" class="text-end" style="width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var track in Model)
+                            {
+                                <tr>
+                                    <td class="text-muted">@track.Id</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                                 style="width: 40px; height: 40px; min-width: 40px;">
+                                                <i class="bi bi-geo-alt text-white"></i>
+                                            </div>
+                                            <span class="fw-semibold">@track.Name</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">@(track.City ?? "—")</span>
+                                    </td>
+                                    <td>@track.Country</td>
+                                    <td class="text-end">
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Details" asp-route-id="@track.Id" class="btn btn-sm btn-outline-info" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@track.Id" class="btn btn-sm btn-outline-warning" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    data-bs-toggle="modal" data-bs-target="#deleteModal-@track.Id" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-light">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Showing @Model.Count track(s)
+                </small>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-geo-alt display-1 text-muted mb-3"></i>
+                <h4 class="text-muted">No Tracks Found</h4>
+                <p class="text-muted mb-4">Get started by adding your first F1 circuit.</p>
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>Add Your First Track
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Delete Confirmation Modals -->
+@foreach (var track in Model)
+{
+    <div class="modal fade" id="deleteModal-@track.Id" tabindex="-1" aria-labelledby="deleteModalLabel-@track.Id" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel-@track.Id">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Confirm Delete
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Are you sure you want to delete <strong>@track.Name</strong>?</p>
+                    <p class="text-muted small mb-0 mt-2">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form asp-action="Delete" asp-route-id="@track.Id" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}

@@ -1,0 +1,135 @@
+@using F1Predictions.Models
+@{
+    ViewData["Title"] = "Team Lineups";
+    var championships = ViewBag.Championships as SelectList;
+    var selectedChampionshipId = ViewBag.SelectedChampionshipId as int?;
+    var lineupByTeam = ViewBag.LineupByTeam as Dictionary<Team, List<Driver>>;
+    var selectedChampionship = ViewBag.SelectedChampionship as Championship;
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-people-fill me-2"></i>Team Lineups
+        </h1>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Add Driver to Team
+        </a>
+    </div>
+
+    <!-- Championship Selector -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-8">
+                    <label for="championshipId" class="form-label fw-semibold">
+                        <i class="bi bi-trophy me-1"></i>Select Championship Season
+                    </label>
+                    <select name="championshipId" id="championshipId" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- Select a Championship --</option>
+                        @if (championships != null)
+                        {
+                            @foreach (var item in championships.Items.Cast<Championship>())
+                            {
+                                <option value="@item.Id" selected="@(selectedChampionshipId == item.Id)">
+                                    @item.Name (@item.Year)
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="bi bi-filter me-1"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (selectedChampionshipId.HasValue && selectedChampionship != null)
+    {
+        <div class="alert alert-info d-flex align-items-center mb-4">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <span>Showing lineups for <strong>@selectedChampionship.Name (@selectedChampionship.Year)</strong></span>
+        </div>
+
+        @if (lineupByTeam != null && lineupByTeam.Any())
+        {
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                @foreach (var teamEntry in lineupByTeam)
+                {
+                    var team = teamEntry.Key;
+                    var drivers = teamEntry.Value;
+                    
+                    <div class="col">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-primary text-white d-flex align-items-center">
+                                <div class="bg-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                     style="width: 35px; height: 35px;">
+                                    <i class="bi bi-flag text-primary"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0">@team.DisplayName</h5>
+                                    <small class="opacity-75">@team.Name</small>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                @if (drivers.Any())
+                                {
+                                    <ul class="list-group list-group-flush">
+                                        @foreach (var driver in drivers)
+                                        {
+                                            <li class="list-group-item d-flex align-items-center px-0">
+                                                <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                                     style="width: 40px; height: 40px; min-width: 40px;">
+                                                    <span class="text-white fw-bold small">@driver.FirstName[0]@driver.LastName[0]</span>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <span class="fw-semibold">@driver.FirstName @driver.LastName</span>
+                                                </div>
+                                                <span class="badge bg-secondary">#@driver.ChampionshipNumber</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                                else
+                                {
+                                    <p class="text-muted mb-0">No drivers assigned</p>
+                                }
+                            </div>
+                            <div class="card-footer bg-light">
+                                <small class="text-muted">
+                                    <i class="bi bi-person me-1"></i>@drivers.Count driver(s)
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-people display-1 text-muted mb-3"></i>
+                    <h4 class="text-muted">No Lineups Found</h4>
+                    <p class="text-muted mb-4">No driver-team assignments for this championship yet.</p>
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>Add First Driver Assignment
+                    </a>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-calendar-event display-1 text-muted mb-3"></i>
+                <h4 class="text-muted">Select a Championship</h4>
+                <p class="text-muted mb-0">Choose a championship season above to view team lineups.</p>
+            </div>
+        </div>
+    }
+</div>
