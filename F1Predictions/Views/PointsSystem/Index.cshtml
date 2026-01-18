@@ -1,0 +1,188 @@
+@model List<PointsSystem>
+
+@{
+    ViewData["Title"] = "Points System";
+    var championships = ViewBag.Championships as SelectList;
+    var selectedChampionshipId = ViewBag.SelectedChampionshipId as int?;
+    var selectedChampionship = ViewBag.SelectedChampionship as Championship;
+    var racePoints = ViewBag.RacePoints as List<PointsSystem>;
+    var sprintPoints = ViewBag.SprintPoints as List<PointsSystem>;
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-calculator me-2"></i>Points System
+        </h1>
+        @if (selectedChampionshipId.HasValue)
+        {
+            <a asp-action="Create" asp-route-championshipId="@selectedChampionshipId" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Add Points Entry
+            </a>
+        }
+    </div>
+
+    <!-- Championship Selector -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-8">
+                    <label for="championshipId" class="form-label fw-semibold">
+                        <i class="bi bi-trophy me-1"></i>Select Championship
+                    </label>
+                    <select name="championshipId" id="championshipId" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- Select Championship --</option>
+                        @if (championships != null)
+                        {
+                            @foreach (var item in championships.Items.Cast<Championship>())
+                            {
+                                <option value="@item.Id" selected="@(selectedChampionshipId == item.Id)">
+                                    @item.Name (@item.Year)
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="bi bi-filter me-1"></i>View Points
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (selectedChampionshipId.HasValue && selectedChampionship != null)
+    {
+        <div class="alert alert-info d-flex align-items-center justify-content-between mb-4">
+            <span>
+                <i class="bi bi-info-circle-fill me-2"></i>
+                Points system for <strong>@selectedChampionship.Name (@selectedChampionship.Year)</strong>
+            </span>
+            @if (!Model.Any())
+            {
+                <form asp-action="InitializeDefault" method="post" class="d-inline">
+                    <input type="hidden" name="championshipId" value="@selectedChampionshipId" />
+                    <button type="submit" class="btn btn-sm btn-success">
+                        <i class="bi bi-magic me-1"></i>Initialize Default F1 Points
+                    </button>
+                </form>
+            }
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="row">
+                <!-- Race Points -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0"><i class="bi bi-flag-fill me-2"></i>Race Points</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Position</th>
+                                        <th class="text-end">Points</th>
+                                        <th class="text-end" style="width: 80px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (racePoints != null)
+                                    {
+                                        @foreach (var entry in racePoints)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <span class="badge @(entry.Position <= 3 ? "bg-warning text-dark" : "bg-secondary")">@entry.Position</span>
+                                                </td>
+                                                <td class="text-end fw-bold">@entry.Points pts</td>
+                                                <td class="text-end">
+                                                    <a asp-action="Edit" asp-route-id="@entry.Id" class="btn btn-sm btn-outline-warning">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sprint Points -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="bi bi-lightning-fill me-2"></i>Sprint Points</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Position</th>
+                                        <th class="text-end">Points</th>
+                                        <th class="text-end" style="width: 80px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (sprintPoints != null && sprintPoints.Any())
+                                    {
+                                        @foreach (var entry in sprintPoints)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <span class="badge @(entry.Position <= 3 ? "bg-warning text-dark" : "bg-secondary")">@entry.Position</span>
+                                                </td>
+                                                <td class="text-end fw-bold">@entry.Points pts</td>
+                                                <td class="text-end">
+                                                    <a asp-action="Edit" asp-route-id="@entry.Id" class="btn btn-sm btn-outline-warning">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-3">No sprint points defined</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-calculator display-1 text-muted mb-3"></i>
+                    <h4 class="text-muted">No Points System Defined</h4>
+                    <p class="text-muted mb-4">Initialize the default F1 points or add custom entries.</p>
+                    <form asp-action="InitializeDefault" method="post" class="d-inline">
+                        <input type="hidden" name="championshipId" value="@selectedChampionshipId" />
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-magic me-1"></i>Initialize Default F1 Points
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-trophy display-1 text-muted mb-3"></i>
+                <h4 class="text-muted">Select a Championship</h4>
+                <p class="text-muted mb-0">Choose a championship to view its points system.</p>
+            </div>
+        </div>
+    }
+</div>

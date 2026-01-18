@@ -1,0 +1,67 @@
+@model List<Race>
+
+@{
+    ViewData["Title"] = "Select Race";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-stopwatch me-2"></i>Sessions
+        </h1>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-flag-fill me-2"></i>Select a Race Weekend</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Choose a race to view and manage its sessions (FP1, FP2, FP3, Qualifying, Sprint, Race).</p>
+            
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Round</th>
+                                <th>Race</th>
+                                <th>Track</th>
+                                <th>Date</th>
+                                <th>Season</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var race in Model)
+                            {
+                                <tr>
+                                    <td><span class="badge bg-danger">R @race.RoundNumber</span></td>
+                                    <td class="fw-semibold">@race.RaceName</td>
+                                    <td>@race.Track.Name</td>
+                                    <td>@race.RaceDate.ToString("dd MMM yyyy")</td>
+                                    <td><small class="text-muted">@race.Championship.Year</small></td>
+                                    <td class="text-end">
+                                        <a asp-action="Index" asp-route-raceId="@race.Id" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-stopwatch me-1"></i>View Sessions
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <i class="bi bi-calendar-x display-4 text-muted"></i>
+                    <p class="mt-2 text-muted">No races found. Add races first in the Calendar.</p>
+                    <a asp-controller="Races" asp-action="Create" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>Add Race
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,103 @@
+@model Race
+
+@{
+    ViewData["Title"] = "Race Details";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-flag-fill me-2"></i>Race Details
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <span class="badge bg-danger fs-4 px-4 py-2 mb-3">Round @Model.RoundNumber</span>
+                        <h2 class="mb-1">@Model.RaceName</h2>
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-geo-alt me-1"></i>@Model.Track.Name, @Model.Track.Country
+                        </p>
+                    </div>
+
+                    <hr />
+
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">Race ID</dt>
+                        <dd class="col-sm-8">@Model.Id</dd>
+
+                        <dt class="col-sm-4 text-muted">Championship</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-dark">@Model.Championship.Name (@Model.Championship.Year)</span>
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted">Round Number</dt>
+                        <dd class="col-sm-8">@Model.RoundNumber</dd>
+
+                        <dt class="col-sm-4 text-muted">Race Name</dt>
+                        <dd class="col-sm-8">@Model.RaceName</dd>
+
+                        <dt class="col-sm-4 text-muted">Track</dt>
+                        <dd class="col-sm-8">@Model.Track.Name</dd>
+
+                        <dt class="col-sm-4 text-muted">Location</dt>
+                        <dd class="col-sm-8">
+                            @if (!string.IsNullOrEmpty(Model.Track.City))
+                            {
+                                <span>@Model.Track.City, </span>
+                            }
+                            @Model.Track.Country
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted">Race Date</dt>
+                        <dd class="col-sm-8">
+                            <i class="bi bi-calendar me-1"></i>@Model.RaceDate.ToString("dddd, dd MMMM yyyy")
+                        </dd>
+                    </dl>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex gap-2">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                            <i class="bi bi-pencil me-1"></i>Edit
+                        </a>
+                        <a asp-action="Index" asp-route-championshipId="@Model.ChampionshipId" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Back to Calendar
+                        </a>
+                        <button type="button" class="btn btn-outline-danger ms-auto" 
+                                data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="bi bi-trash me-1"></i>Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Confirm Delete
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Are you sure you want to delete <strong>@Model.RaceName</strong>?</p>
+                <p class="text-muted small mb-0 mt-2">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form asp-action="Delete" asp-route-id="@Model.Id" asp-route-championshipId="@Model.ChampionshipId" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

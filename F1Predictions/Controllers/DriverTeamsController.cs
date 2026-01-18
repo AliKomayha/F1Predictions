@@ -34,11 +34,11 @@ namespace F1Predictions.Controllers
             {
                 var driverTeams = await _driverTeamsService.GetByChampionship(championshipId.Value);
                 
-                // Group by team
+                // Group by TeamId (not Team object) to properly combine drivers from same team
                 var lineupByTeam = driverTeams
-                    .GroupBy(dt => dt.Team)
-                    .OrderBy(g => g.Key.DisplayName)
-                    .ToDictionary(g => g.Key, g => g.Select(dt => dt.Driver).ToList());
+                    .GroupBy(dt => dt.TeamId)
+                    .OrderBy(g => g.First().Team.DisplayName)
+                    .ToDictionary(g => g.First().Team, g => g.ToList());
                 
                 ViewBag.LineupByTeam = lineupByTeam;
                 ViewBag.SelectedChampionship = championships.FirstOrDefault(c => c.Id == championshipId.Value);

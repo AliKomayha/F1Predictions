@@ -1,0 +1,84 @@
+@model Race
+
+@{
+    ViewData["Title"] = "Edit Race";
+    var championships = ViewBag.Championships as SelectList;
+    var tracks = ViewBag.Tracks as SelectList;
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Race
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label asp-for="ChampionshipId" class="form-label fw-semibold">
+                                    <i class="bi bi-trophy me-1"></i>Championship Season <span class="text-danger">*</span>
+                                </label>
+                                <select asp-for="ChampionshipId" class="form-select" asp-items="@championships">
+                                    <option value="">-- Select Championship --</option>
+                                </select>
+                                <span asp-validation-for="ChampionshipId" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="RoundNumber" class="form-label fw-semibold">
+                                    Round # <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="RoundNumber" type="number" class="form-control" min="1" max="30" />
+                                <span asp-validation-for="RoundNumber" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="RaceName" class="form-label fw-semibold">
+                                Race Name <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="RaceName" class="form-control" placeholder="e.g., Monaco Grand Prix" />
+                            <span asp-validation-for="RaceName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="TrackId" class="form-label fw-semibold">
+                                <i class="bi bi-geo-alt me-1"></i>Track <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="TrackId" class="form-select" asp-items="@tracks">
+                                <option value="">-- Select Track --</option>
+                            </select>
+                            <span asp-validation-for="TrackId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="RaceDate" class="form-label fw-semibold">
+                                <i class="bi bi-calendar me-1"></i>Race Date <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="RaceDate" type="date" class="form-control" />
+                            <span asp-validation-for="RaceDate" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-lg me-1"></i>Update Race
+                            </button>
+                            <a asp-action="Index" asp-route-championshipId="@Model.ChampionshipId" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Back to Calendar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

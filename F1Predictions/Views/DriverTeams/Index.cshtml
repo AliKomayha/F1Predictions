@@ -3,7 +3,7 @@
     ViewData["Title"] = "Team Lineups";
     var championships = ViewBag.Championships as SelectList;
     var selectedChampionshipId = ViewBag.SelectedChampionshipId as int?;
-    var lineupByTeam = ViewBag.LineupByTeam as Dictionary<Team, List<Driver>>;
+    var lineupByTeam = ViewBag.LineupByTeam as Dictionary<Team, List<DriverTeam>>;
     var selectedChampionship = ViewBag.SelectedChampionship as Championship;
 }
 
@@ -56,57 +56,111 @@
 
         @if (lineupByTeam != null && lineupByTeam.Any())
         {
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            <div class="row row-cols-1 row-cols-lg-2 g-4">
                 @foreach (var teamEntry in lineupByTeam)
                 {
                     var team = teamEntry.Key;
-                    var drivers = teamEntry.Value;
+                    var driverAssignments = teamEntry.Value;
                     
                     <div class="col">
                         <div class="card shadow-sm h-100">
-                            <div class="card-header bg-primary text-white d-flex align-items-center">
-                                <div class="bg-white rounded-circle d-flex align-items-center justify-content-center me-3" 
-                                     style="width: 35px; height: 35px;">
-                                    <i class="bi bi-flag text-primary"></i>
+                            <!-- Team Header -->
+                            <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                         style="width: 40px; height: 40px;">
+                                        <i class="bi bi-flag text-primary fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0">@team.DisplayName</h5>
+                                        <small class="opacity-75">@team.Name</small>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h5 class="mb-0">@team.DisplayName</h5>
-                                    <small class="opacity-75">@team.Name</small>
-                                </div>
+                                <span class="badge bg-light text-primary">@driverAssignments.Count Driver(s)</span>
                             </div>
+                            
+                            <!-- Drivers Container - Side by Side -->
                             <div class="card-body">
-                                @if (drivers.Any())
-                                {
-                                    <ul class="list-group list-group-flush">
-                                        @foreach (var driver in drivers)
-                                        {
-                                            <li class="list-group-item d-flex align-items-center px-0">
-                                                <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center me-3" 
-                                                     style="width: 40px; height: 40px; min-width: 40px;">
-                                                    <span class="text-white fw-bold small">@driver.FirstName[0]@driver.LastName[0]</span>
+                                <div class="row g-3">
+                                    @foreach (var driverTeam in driverAssignments)
+                                    {
+                                        var driver = driverTeam.Driver;
+                                        <div class="col-6">
+                                            <div class="border rounded p-3 h-100 bg-light">
+                                                <div class="text-center mb-2">
+                                                    <div class="bg-danger rounded-circle d-inline-flex align-items-center justify-content-center mb-2" 
+                                                         style="width: 50px; height: 50px;">
+                                                        <span class="text-white fw-bold">@driver.FirstName[0]@driver.LastName[0]</span>
+                                                    </div>
+                                                    <h6 class="mb-0">@driver.FirstName</h6>
+                                                    <h6 class="fw-bold mb-1">@driver.LastName</h6>
+                                                    <span class="badge bg-secondary">#@driver.ChampionshipNumber</span>
                                                 </div>
-                                                <div class="flex-grow-1">
-                                                    <span class="fw-semibold">@driver.FirstName @driver.LastName</span>
+                                                <div class="d-flex justify-content-center gap-1 mt-2">
+                                                    <a asp-action="Edit" asp-route-id="@driverTeam.Id" class="btn btn-sm btn-outline-warning" title="Edit">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                            data-bs-toggle="modal" data-bs-target="#deleteModal-@driverTeam.Id" title="Remove">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
                                                 </div>
-                                                <span class="badge bg-secondary">#@driver.ChampionshipNumber</span>
-                                            </li>
-                                        }
-                                    </ul>
-                                }
-                                else
-                                {
-                                    <p class="text-muted mb-0">No drivers assigned</p>
-                                }
-                            </div>
-                            <div class="card-footer bg-light">
-                                <small class="text-muted">
-                                    <i class="bi bi-person me-1"></i>@drivers.Count driver(s)
-                                </small>
+                                            </div>
+                                        </div>
+                                    }
+                                    @if (driverAssignments.Count < 2)
+                                    {
+                                        <div class="col-6">
+                                            <div class="border rounded p-3 h-100 bg-white border-dashed d-flex align-items-center justify-content-center" style="border-style: dashed !important;">
+                                                <a asp-action="Create" class="text-decoration-none text-muted">
+                                                    <div class="text-center">
+                                                        <i class="bi bi-plus-circle display-6"></i>
+                                                        <p class="mb-0 small mt-1">Add Driver</p>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         </div>
                     </div>
                 }
             </div>
+            
+            <!-- Delete Confirmation Modals -->
+            @foreach (var teamEntry in lineupByTeam)
+            {
+                @foreach (var driverTeam in teamEntry.Value)
+                {
+                    <div class="modal fade" id="deleteModal-@driverTeam.Id" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header bg-danger text-white">
+                                    <h5 class="modal-title">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>Remove Driver
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="mb-0">
+                                        Remove <strong>@driverTeam.Driver.FirstName @driverTeam.Driver.LastName</strong> 
+                                        from <strong>@driverTeam.Team.DisplayName</strong>?
+                                    </p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <form asp-action="Delete" asp-route-id="@driverTeam.Id" asp-route-championshipId="@selectedChampionshipId" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-danger">
+                                            <i class="bi bi-trash me-1"></i>Remove
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
         }
         else
         {

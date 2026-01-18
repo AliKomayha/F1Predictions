@@ -1,0 +1,125 @@
+@model List<Session>
+
+@{
+    ViewData["Title"] = "Sessions";
+    var race = ViewBag.Race as Race;
+    var raceId = ViewBag.RaceId as int?;
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">
+                <i class="bi bi-stopwatch me-2"></i>Sessions
+            </h1>
+            @if (race != null)
+            {
+                <p class="text-muted mb-0">
+                    <span class="badge bg-danger">R @race.RoundNumber</span>
+                    @race.RaceName - @race.Track.Name
+                </p>
+            }
+        </div>
+        <div>
+            <a asp-action="Create" asp-route-raceId="@raceId" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Add Session
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary ms-2">
+                <i class="bi bi-arrow-left me-1"></i>Change Race
+            </a>
+        </div>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            @foreach (var session in Model)
+            {
+                var bgColor = session.Type switch
+                {
+                    "FP1" or "FP2" or "FP3" => "secondary",
+                    "Qualifying" or "Sprint Qualifying" => "warning",
+                    "Sprint" => "info",
+                    "Race" => "danger",
+                    _ => "dark"
+                };
+                
+                <div class="col">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-@bgColor @(bgColor == "warning" ? "" : "text-white")">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">@session.Type</h5>
+                                @if (session.Laps.HasValue)
+                                {
+                                    <span class="badge bg-light text-dark">@session.Laps Laps</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-2">
+                                <i class="bi bi-calendar me-1 text-muted"></i>
+                                @session.DateTime.ToString("dddd, dd MMM yyyy")
+                            </p>
+                            <p class="mb-0">
+                                <i class="bi bi-clock me-1 text-muted"></i>
+                                @session.DateTime.ToString("HH:mm")
+                            </p>
+                        </div>
+                        <div class="card-footer bg-light">
+                            <div class="btn-group w-100" role="group">
+                                <a asp-controller="SessionResults" asp-action="Index" asp-route-sessionId="@session.Id" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-list-ol me-1"></i>Results
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@session.Id" class="btn btn-sm btn-outline-warning">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        data-bs-toggle="modal" data-bs-target="#deleteModal-@session.Id">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-stopwatch display-1 text-muted mb-3"></i>
+                <h4 class="text-muted">No Sessions Found</h4>
+                <p class="text-muted mb-4">Add sessions for this race weekend.</p>
+                <a asp-action="Create" asp-route-raceId="@raceId" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>Add First Session
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Delete Modals -->
+@foreach (var session in Model)
+{
+    <div class="modal fade" id="deleteModal-@session.Id" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Delete Session</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Delete <strong>@session.Type</strong> session?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form asp-action="Delete" asp-route-id="@session.Id" asp-route-raceId="@raceId" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}

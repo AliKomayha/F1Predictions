@@ -1,0 +1,91 @@
+@model SessionResult
+
+@{
+    ViewData["Title"] = "Edit Result";
+    var session = ViewBag.Session as Session;
+    var drivers = ViewBag.Drivers as SelectList;
+    var teams = ViewBag.Teams as SelectList;
+    var statuses = ViewBag.Statuses as SelectList;
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning">
+                    <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Edit Result</h4>
+                    @if (session != null)
+                    {
+                        <small>@session.Race.RaceName - @session.Type</small>
+                    }
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="SessionId" />
+                        <input type="hidden" asp-for="Points" />
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="DriverId" class="form-label fw-semibold">
+                                    Driver <span class="text-danger">*</span>
+                                </label>
+                                <select asp-for="DriverId" class="form-select" asp-items="@drivers">
+                                    <option value="">-- Select Driver --</option>
+                                </select>
+                                <span asp-validation-for="DriverId" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="TeamId" class="form-label fw-semibold">
+                                    Team <span class="text-danger">*</span>
+                                </label>
+                                <select asp-for="TeamId" class="form-select" asp-items="@teams">
+                                    <option value="">-- Select Team --</option>
+                                </select>
+                                <span asp-validation-for="TeamId" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="GridPosition" class="form-label fw-semibold">Grid Position</label>
+                                <input asp-for="GridPosition" type="number" class="form-control" min="1" max="20" />
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="Position" class="form-label fw-semibold">Finish Position</label>
+                                <input asp-for="Position" type="number" class="form-control" min="1" max="20" />
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="Status" class="form-label fw-semibold">Status <span class="text-danger">*</span></label>
+                                <select asp-for="Status" class="form-select" asp-items="@statuses">
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input asp-for="FastestLap" class="form-check-input" type="checkbox" />
+                                <label asp-for="FastestLap" class="form-check-label">
+                                    <i class="bi bi-stopwatch-fill me-1" style="color: purple;"></i>Fastest Lap
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-lg me-1"></i>Update
+                            </button>
+                            <a asp-action="Index" asp-route-sessionId="@Model.SessionId" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Back
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

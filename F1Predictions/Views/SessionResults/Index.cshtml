@@ -1,0 +1,182 @@
+@model List<SessionResult>
+
+@{
+    ViewData["Title"] = "Session Results";
+    var session = ViewBag.Session as Session;
+    var sessionId = ViewBag.SessionId as int?;
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">
+                <i class="bi bi-list-ol me-2"></i>Session Results
+            </h1>
+            @if (session != null)
+            {
+                <p class="text-muted mb-0">
+                    <span class="badge bg-danger">R @session.Race.RoundNumber</span>
+                    @session.Race.RaceName - <strong>@session.Type</strong>
+                </p>
+            }
+        </div>
+        <div>
+            <a asp-action="Create" asp-route-sessionId="@sessionId" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Add Result
+            </a>
+            <a asp-controller="Sessions" asp-action="Index" asp-route-raceId="@session?.RaceId" class="btn btn-outline-secondary ms-2">
+                <i class="bi bi-arrow-left me-1"></i>Back to Sessions
+            </a>
+        </div>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-center" style="width: 60px;">Pos</th>
+                                <th>Driver</th>
+                                <th>Team</th>
+                                <th class="text-center">Grid</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Points</th>
+                                <th class="text-center">FL</th>
+                                <th class="text-end" style="width: 140px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var result in Model)
+                            {
+                                var posClass = result.Position switch
+                                {
+                                    1 => "bg-warning text-dark",
+                                    2 => "bg-secondary",
+                                    3 => "bg-danger",
+                                    _ => "bg-light text-dark"
+                                };
+                                
+                                <tr>
+                                    <td class="text-center">
+                                        @if (result.Position.HasValue)
+                                        {
+                                            <span class="badge @posClass fs-6">@result.Position</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-dark rounded-circle d-flex align-items-center justify-content-center me-2" 
+                                                 style="width: 32px; height: 32px;">
+                                                <span class="text-white small fw-bold">@result.Driver.FirstName[0]@result.Driver.LastName[0]</span>
+                                            </div>
+                                            <span class="fw-semibold">@result.Driver.FirstName @result.Driver.LastName</span>
+                                            <small class="text-muted ms-1">#@result.Driver.ChampionshipNumber</small>
+                                        </div>
+                                    </td>
+                                    <td>@result.Team.DisplayName</td>
+                                    <td class="text-center">
+                                        @if (result.GridPosition.HasValue)
+                                        {
+                                            <span>@result.GridPosition</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @{
+                                            var statusClass = result.Status switch
+                                            {
+                                                "Finished" => "success",
+                                                "DNF" or "Retired" => "danger",
+                                                "DNS" => "secondary",
+                                                "DSQ" => "dark",
+                                                _ => "info"
+                                            };
+                                        }
+                                        <span class="badge bg-@statusClass">@result.Status</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (result.Points > 0)
+                                        {
+                                            <span class="badge bg-success">+@result.Points</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">0</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (result.FastestLap)
+                                        {
+                                            <i class="bi bi-stopwatch-fill text-purple" style="color: purple;" title="Fastest Lap"></i>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Edit" asp-route-id="@result.Id" class="btn btn-sm btn-outline-warning">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    data-bs-toggle="modal" data-bs-target="#deleteModal-@result.Id">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-light">
+                <small class="text-muted">@Model.Count result(s)</small>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-list-ol display-1 text-muted mb-3"></i>
+                <h4 class="text-muted">No Results Yet</h4>
+                <p class="text-muted mb-4">Add results for this session.</p>
+                <a asp-action="Create" asp-route-sessionId="@sessionId" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>Add First Result
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Delete Modals -->
+@foreach (var result in Model)
+{
+    <div class="modal fade" id="deleteModal-@result.Id" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Delete Result</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Delete result for <strong>@result.Driver.FirstName @result.Driver.LastName</strong>?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form asp-action="Delete" asp-route-id="@result.Id" asp-route-sessionId="@sessionId" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}

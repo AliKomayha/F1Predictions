@@ -12,6 +12,10 @@ builder.Services.AddScoped<TeamsService>();
 builder.Services.AddScoped<ChampionshipsService>();
 builder.Services.AddScoped<TracksService>();
 builder.Services.AddScoped<DriverTeamsService>();
+builder.Services.AddScoped<RacesService>();
+builder.Services.AddScoped<SessionsService>();
+builder.Services.AddScoped<SessionResultsService>();
+builder.Services.AddScoped<PointsSystemService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(
@@ -27,8 +31,6 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-
-
 
 
 app.UseHttpsRedirection();

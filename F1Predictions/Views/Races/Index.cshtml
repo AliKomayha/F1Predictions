@@ -1,0 +1,186 @@
+@model List<Race>
+
+@{
+    ViewData["Title"] = "Race Calendar";
+    var championships = ViewBag.Championships as SelectList;
+    var selectedChampionshipId = ViewBag.SelectedChampionshipId as int?;
+    var selectedChampionship = ViewBag.SelectedChampionship as Championship;
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-calendar-event me-2"></i>Race Calendar
+        </h1>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Add Race
+        </a>
+    </div>
+
+    <!-- Championship Filter -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-8">
+                    <label for="championshipId" class="form-label fw-semibold">
+                        <i class="bi bi-trophy me-1"></i>Filter by Championship Season
+                    </label>
+                    <select name="championshipId" id="championshipId" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- All Championships --</option>
+                        @if (championships != null)
+                        {
+                            @foreach (var item in championships.Items.Cast<Championship>())
+                            {
+                                <option value="@item.Id" selected="@(selectedChampionshipId == item.Id)">
+                                    @item.Name (@item.Year)
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="bi bi-filter me-1"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (selectedChampionship != null)
+    {
+        <div class="alert alert-info d-flex align-items-center mb-4">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <span>Showing races for <strong>@selectedChampionship.Name (@selectedChampionship.Year)</strong></span>
+        </div>
+    }
+
+    @if (Model.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col" class="text-center" style="width: 80px;">Round</th>
+                                <th scope="col">Race Name</th>
+                                <th scope="col">Track</th>
+                                <th scope="col">Country</th>
+                                <th scope="col" class="text-center">Date</th>
+                                @if (selectedChampionshipId == null)
+                                {
+                                    <th scope="col">Season</th>
+                                }
+                                <th scope="col" class="text-end" style="width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var race in Model)
+                            {
+                                <tr>
+                                    <td class="text-center">
+                                        <span class="badge bg-danger fs-6 px-3 py-2">@race.RoundNumber</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-dark rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                                 style="width: 40px; height: 40px; min-width: 40px;">
+                                                <i class="bi bi-flag-fill text-white"></i>
+                                            </div>
+                                            <span class="fw-semibold">@race.RaceName</span>
+                                        </div>
+                                    </td>
+                                    <td>@race.Track.Name</td>
+                                    <td>
+                                        <span class="text-muted">@race.Track.Country</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">@race.RaceDate.ToString("dd MMM yyyy")</span>
+                                    </td>
+                                    @if (selectedChampionshipId == null)
+                                    {
+                                        <td>
+                                            <small class="text-muted">@race.Championship.Year</small>
+                                        </td>
+                                    }
+                                    <td class="text-end">
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Details" asp-route-id="@race.Id" class="btn btn-sm btn-outline-info" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@race.Id" class="btn btn-sm btn-outline-warning" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    data-bs-toggle="modal" data-bs-target="#deleteModal-@race.Id" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-light">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Showing @Model.Count race(s)
+                </small>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-calendar-x display-1 text-muted mb-3"></i>
+                <h4 class="text-muted">No Races Found</h4>
+                <p class="text-muted mb-4">
+                    @if (selectedChampionshipId.HasValue)
+                    {
+                        <span>No races scheduled for this championship yet.</span>
+                    }
+                    else
+                    {
+                        <span>Get started by adding your first race.</span>
+                    }
+                </p>
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>Add First Race
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Delete Confirmation Modals -->
+@foreach (var race in Model)
+{
+    <div class="modal fade" id="deleteModal-@race.Id" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Confirm Delete
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Are you sure you want to delete <strong>@race.RaceName</strong>?</p>
+                    <p class="text-muted small mb-0 mt-2">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form asp-action="Delete" asp-route-id="@race.Id" asp-route-championshipId="@selectedChampionshipId" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}

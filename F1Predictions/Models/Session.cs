@@ -8,15 +8,18 @@ namespace F1Predictions.Models
         public int Id { get; set; }
 
         [Required]
+        [Column("race_id")]
         public int RaceId { get; set; }
 
         [Required]
+        [Column("championship_id")]
         public int ChampionshipId { get; set; }
 
         [Required]
         public string Type { get; set; } // FP1, FP2, Q1, Q2, Q3, Sprint, Race
 
         [Required]
+        [Column("date_time")]
         public DateTime DateTime { get; set; }
 
         public int? Laps { get; set; }
