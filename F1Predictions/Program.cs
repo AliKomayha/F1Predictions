@@ -4,6 +4,12 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Read JWT settings
+var key = builder.Configuration["Jwt:Key"];
+
+
+
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
@@ -16,6 +22,7 @@ builder.Services.AddScoped<RacesService>();
 builder.Services.AddScoped<SessionsService>();
 builder.Services.AddScoped<SessionResultsService>();
 builder.Services.AddScoped<PointsSystemService>();
+builder.Services.AddScoped<AuthService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(

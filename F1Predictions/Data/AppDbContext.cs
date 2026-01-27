@@ -17,6 +17,8 @@ namespace F1Predictions.Data
         public DbSet<Session> Sessions { get; set; }
         public DbSet<SessionResult> SessionResults { get; set; }
         public DbSet<PointsSystem> PointsSystems { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<UserOtp> UserOtps { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
