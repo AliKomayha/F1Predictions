@@ -133,9 +133,11 @@
                                             <th class="text-center">Pts</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        @foreach (var driver in driverStandings.Take(10))
+                                    <tbody id="driverStandingsBody">
+                                        @{ var driverIndex = 0; }
+                                        @foreach (var driver in driverStandings)
                                         {
+                                            driverIndex++;
                                             var posClass = driver.Position switch
                                             {
                                                 1 => "bg-warning text-dark",
@@ -143,7 +145,8 @@
                                                 3 => "bg-danger text-white",
                                                 _ => "bg-light text-dark"
                                             };
-                                            <tr>
+                                            var hiddenClass = driverIndex > 10 ? "driver-row-hidden d-none" : "";
+                                            <tr class="@hiddenClass">
                                                 <td class="text-center">
                                                     <span class="badge @posClass">@driver.Position</span>
                                                 </td>
@@ -168,6 +171,15 @@
                                     </tbody>
                                 </table>
                             </div>
+                            @if (driverStandings.Count > 10)
+                            {
+                                <div class="card-footer bg-light text-center">
+                                    <button type="button" class="btn btn-outline-dark btn-sm" id="toggleDriversBtn" onclick="toggleDriverStandings()">
+                                        <i class="bi bi-chevron-down me-1" id="toggleDriversIcon"></i>
+                                        <span id="toggleDriversText">Show More (@(driverStandings.Count - 10) more)</span>
+                                    </button>
+                                </div>
+                            }
                         }
                         else
                         {
@@ -361,5 +373,36 @@
                 </div>
             </div>
         </div>
-    </div>
 </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleDriverStandings() {
+            const hiddenRows = document.querySelectorAll('.driver-row-hidden');
+            const toggleBtn = document.getElementById('toggleDriversBtn');
+            const toggleIcon = document.getElementById('toggleDriversIcon');
+            const toggleText = document.getElementById('toggleDriversText');
+            
+            const isHidden = hiddenRows.length > 0 && hiddenRows[0].classList.contains('d-none');
+            
+            hiddenRows.forEach(row => {
+                if (isHidden) {
+                    row.classList.remove('d-none');
+                } else {
+                    row.classList.add('d-none');
+                }
+            });
+            
+            if (isHidden) {
+                toggleIcon.classList.remove('bi-chevron-down');
+                toggleIcon.classList.add('bi-chevron-up');
+                toggleText.textContent = 'Show Less';
+            } else {
+                toggleIcon.classList.remove('bi-chevron-up');
+                toggleIcon.classList.add('bi-chevron-down');
+                toggleText.textContent = 'Show More (' + hiddenRows.length + ' more)';
+            }
+        }
+    </script>
+}
