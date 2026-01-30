@@ -1,1 +1,193 @@
-/* You can add global styles to this file, and also import other style files */
+@use "tailwindcss";
+
+/* Tailwind v4 content source configuration */
+@source "./app/**/*.{html,ts}";
+
+/* Google Fonts - Titillium Web */
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700&display=swap');
+
+/* Custom theme configuration using CSS variables - Tailwind v4 approach */
+@theme {
+  /* F1 Racing Theme Colors */
+  --color-f1-red: #E10600;
+  --color-f1-red-dark: #a50500;
+  --color-f1-black: #0d0d12;
+  --color-f1-gray: #15151e;
+  --color-f1-gray-light: #26262f;
+  --color-f1-white: #FFFFFF;
+  --color-f1-accent: #ff3b30;
+
+  /* Font family */
+  --font-f1: 'Titillium Web', sans-serif;
+}
+
+/* === BASE STYLES === */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-f1-black);
+  color: var(--color-f1-white);
+  font-family: var(--font-f1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  /* Mobile: padding for bottom navbar */
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
+}
+
+/* === CUSTOM SCROLLBAR === */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--color-f1-gray);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-f1-gray-light);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-f1-red);
+}
+
+/* === FOCUS STYLES === */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-f1-red), 0 0 0 4px var(--color-f1-black);
+}
+
+button {
+  touch-action: manipulation;
+}
+
+/* === PAGE LAYOUT === */
+.page-container {
+  min-height: 100vh;
+  padding: 24px 16px;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  max-width: 100%;
+}
+
+/* === RESPONSIVE LAYOUT === */
+@media (min-width: 768px) {
+  body {
+    /* Desktop: navbar at top */
+    padding-bottom: 0;
+    padding-top: 70px;
+  }
+
+  .page-container {
+    padding: 32px 24px;
+    padding-bottom: 48px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-container {
+    padding: 40px 32px;
+    max-width: 1100px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .page-container {
+    max-width: 1200px;
+  }
+}
+
+/* === PLACEHOLDER CONTENT === */
+.placeholder-content {
+  text-align: center;
+  padding-top: 60px;
+}
+
+.placeholder-content h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-f1-white);
+  margin-bottom: 8px;
+}
+
+.placeholder-content p {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* === UTILITY CLASSES === */
+.text-muted {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.text-accent {
+  color: var(--color-f1-red);
+}
+
+/* === CARD COMPONENT === */
+.card {
+  background: linear-gradient(165deg,
+      rgba(38, 38, 48, 0.9) 0%,
+      rgba(28, 28, 35, 0.95) 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+/* === BUTTON STYLES === */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font-f1);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-f1-red) 0%, var(--color-f1-red-dark) 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(225, 6, 0, 0.4);
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: white;
+}

@@ -63,15 +63,18 @@ namespace F1Predictions.ApiControllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
-        [HttpPost("logout")]
-        public ActionResult<AuthResponseDto> Logout()
+        [HttpPost("refresh-token")]
+        public async Task<ActionResult<AuthResponseDto>> RefreshToken()
         {
-            // JWT is stateless - client should discard the token
-            return Ok(new AuthResponseDto
-            {
-                Success = true,
-                Message = "Logged out successfully"
-            });
+            var result = await _authService.RefreshTokenAsync();
+            return result.Success ? Ok(result) : Unauthorized(result);
+        }
+
+        [HttpPost("logout")]
+        public async Task<ActionResult<AuthResponseDto>> Logout()
+        {
+            var result = await _authService.LogoutAsync();
+            return Ok(result);
         }
 
         [HttpPost("request-password-reset")]

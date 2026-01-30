@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+/* Tailwind v4 content source configuration */
+@source "./app/**/*.{html,ts}";
+
+/* Google Fonts - Titillium Web */
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700&display=swap');
+
+/* Custom theme configuration using CSS variables - Tailwind v4 approach */
+@theme {
+    /* F1 Racing Theme Colors */
+    --color-f1-red: #E10600;
+    --color-f1-red-dark: #B30500;
+    --color-f1-black: #15151E;
+    --color-f1-gray: #1F1F27;
+    --color-f1-gray-light: #38383F;
+    --color-f1-white: #FFFFFF;
+    --color-f1-accent: #FF1801;
+
+    /* Font family */
+    --font-f1: 'Titillium Web', sans-serif;
+}
+
+/* Base styles */
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-f1-black);
+    color: var(--color-f1-white);
+    font-family: var(--font-f1);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe area for mobile devices */
+body {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: var(--color-f1-gray);
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--color-f1-gray-light);
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-f1-red);
+}
+
+/* Focus styles for accessibility */
+*:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-f1-red), 0 0 0 4px var(--color-f1-black);
+}
+
+/* Button reset for touch devices */
+button {
+    touch-action: manipulation;
+}
+
+/* Page layout */
+.page-container {
+    min-height: 100vh;
+    padding: 80px 16px 24px 16px;
+    /* Top padding for fixed navbar */
+}
+
+.placeholder-content {
+    text-align: center;
+    padding-top: 60px;
+}
+
+.placeholder-content h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-f1-white);
+    margin-bottom: 8px;
+}
+
+.placeholder-content p {
+    font-size: 14px;
+    color: #9CA3AF;
+}

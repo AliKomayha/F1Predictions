@@ -30,6 +30,7 @@ namespace F1Predictions.Data
         public DbSet<PredictionReport> PredictionReports { get; set; }
         public DbSet<PredictionVoteWindow> PredictionVoteWindows { get; set; }
         public DbSet<RaceState> RaceStates { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -107,6 +108,12 @@ namespace F1Predictions.Data
                 .WithMany()
                 .HasForeignKey(wp => wp.LeagueId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // Unique refresh token
+            modelBuilder.Entity<RefreshToken>()
+                .HasIndex(rt => rt.Token)
+                .IsUnique()
+                .HasDatabaseName("UX_RefreshTokens");
         }
     }
 }

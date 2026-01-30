@@ -1,3 +1,7 @@
+# ========================
+# .NET / ASP.NET Core
+# ========================
+
 # Build outputs
 bin/
 obj/
@@ -24,3 +28,44 @@ publish/
 
 # Logs
 *.log
+*.tlog
+*.tmp
+*.cache
+*.swp
+*.DS_Store
+
+# ========================
+# NuGet
+# ========================
+
+*.nupkg
+packages/
+.nuget/
+project.lock.json
+project.fragment.lock.json
+
+# ========================
+# Angular / Node
+# ========================
+frontend/f1-predictions-ui/node_modules/
+frontend/f1-predictions-ui/dist/
+frontend/f1-predictions-ui/out-tsc/
+frontend/f1-predictions-ui/.angular/
+frontend/f1-predictions-ui/*.log
+frontend/f1-predictions-ui/package-lock.json
+
+# ========================
+# Environment files
+# ========================
+*.env
+*.local
+.env.local
+.env.*.local
+
+
+# ========================
+# Others
+# ========================
+Thumbs.db
+
+

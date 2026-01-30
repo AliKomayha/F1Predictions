@@ -1,5 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using F1Predictions.Data;
 using F1Predictions.Models;
@@ -13,11 +14,13 @@ namespace F1Predictions.Services
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public AuthService(AppDbContext context, IConfiguration config)
+        public AuthService(AppDbContext context, IConfiguration config, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _config = config;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<AuthResponseDto> SignupAsync(SignupRequestDto request)
@@ -106,7 +109,6 @@ namespace F1Predictions.Services
             };
         }
 
-        //verify phone 
         public async Task<AuthResponseDto> VerifyPhoneAsync(VerifyPhoneRequestDto request)
         {
             var user = await _context.Users
@@ -149,14 +151,13 @@ namespace F1Predictions.Services
             user.PhoneVerifiedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            // Generate JWT token
-            var token = GenerateJwt(user.Id, user.FirstName, user.LastName, user.Phone);
+            // Generate tokens and set cookies
+            await SetAuthCookiesAsync(user);
 
             return new AuthResponseDto
             {
                 Success = true,
                 Message = "Phone verified successfully",
-                Token = token,
                 User = new UserDto
                 {
                     Id = user.Id,
@@ -172,7 +173,6 @@ namespace F1Predictions.Services
             };
         }
 
-        //login 
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
         {
             var user = await _context.Users
@@ -230,14 +230,13 @@ namespace F1Predictions.Services
                 };
             }
 
-            // Generate JWT token
-            var token = GenerateJwt(user.Id, user.FirstName, user.LastName, user.Phone);
+            // Generate tokens and set cookies
+            await SetAuthCookiesAsync(user);
 
             return new AuthResponseDto
             {
                 Success = true,
                 Message = "Login successful",
-                Token = token,
                 User = new UserDto
                 {
                     Id = user.Id,
@@ -253,7 +252,99 @@ namespace F1Predictions.Services
             };
         }
 
-        //request otp
+        public async Task<AuthResponseDto> RefreshTokenAsync()
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext == null)
+            {
+                return new AuthResponseDto { Success = false, Message = "No HTTP context" };
+            }
+
+            var refreshToken = httpContext.Request.Cookies["refresh_token"];
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return new AuthResponseDto { Success = false, Message = "No refresh token" };
+            }
+
+            var tokenRecord = await _context.RefreshTokens
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(t => t.Token == refreshToken && !t.IsRevoked && t.ExpiresAt > DateTime.UtcNow);
+
+            if (tokenRecord == null)
+            {
+                return new AuthResponseDto { Success = false, Message = "Invalid or expired refresh token" };
+            }
+
+            // Revoke old token
+            tokenRecord.IsRevoked = true;
+
+            // Generate new tokens
+            var accessToken = GenerateAccessToken(tokenRecord.User);
+            var newRefreshToken = GenerateRefreshToken();
+
+            // Store new refresh token
+            _context.RefreshTokens.Add(new RefreshToken
+            {
+                UserId = tokenRecord.UserId,
+                Token = newRefreshToken,
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
+            });
+
+            await _context.SaveChangesAsync();
+
+            // Set cookies
+            SetTokenCookies(httpContext.Response, accessToken, newRefreshToken);
+
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = "Token refreshed",
+                User = new UserDto
+                {
+                    Id = tokenRecord.User.Id,
+                    FirstName = tokenRecord.User.FirstName,
+                    LastName = tokenRecord.User.LastName,
+                    Phone = tokenRecord.User.Phone,
+                    Email = tokenRecord.User.Email,
+                    CreatedAt = tokenRecord.User.CreatedAt,
+                    IsActive = tokenRecord.User.IsActive,
+                    IsPhoneVerified = tokenRecord.User.PhoneVerifiedAt.HasValue,
+                    IsEmailVerified = tokenRecord.User.EmailVerifiedAt.HasValue
+                }
+            };
+        }
+
+        public async Task<AuthResponseDto> LogoutAsync()
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext == null)
+            {
+                return new AuthResponseDto { Success = false, Message = "No HTTP context" };
+            }
+
+            var refreshToken = httpContext.Request.Cookies["refresh_token"];
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                var tokenRecord = await _context.RefreshTokens
+                    .FirstOrDefaultAsync(t => t.Token == refreshToken);
+                if (tokenRecord != null)
+                {
+                    tokenRecord.IsRevoked = true;
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            // Clear cookies
+            httpContext.Response.Cookies.Delete("access_token", new CookieOptions { Path = "/" });
+            httpContext.Response.Cookies.Delete("refresh_token", new CookieOptions { Path = "/" });
+
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = "Logged out successfully"
+            };
+        }
+
         public async Task<AuthResponseDto> RequestPasswordResetAsync(RequestPasswordResetDto request)
         {
             var user = await _context.Users
@@ -291,7 +382,6 @@ namespace F1Predictions.Services
             };
         }
 
-        //verify otp
         public async Task<AuthResponseDto> VerifyResetOtpAsync(VerifyResetOtpRequestDto request)
         {
             var user = await _context.Users
@@ -327,7 +417,6 @@ namespace F1Predictions.Services
             };
         }
 
-        //reset password
         public async Task<AuthResponseDto> ResetPasswordAsync(ResetPasswordRequestDto request)
         {
             var user = await _context.Users
@@ -371,8 +460,30 @@ namespace F1Predictions.Services
             };
         }
 
-        //generate jwt
-        private string GenerateJwt(int id, string firstName, string lastName, string phone)
+        #region Private Helper Methods
+
+        private async Task SetAuthCookiesAsync(User user)
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext == null) return;
+
+            var accessToken = GenerateAccessToken(user);
+            var refreshToken = GenerateRefreshToken();
+
+            // Store refresh token in database
+            _context.RefreshTokens.Add(new RefreshToken
+            {
+                UserId = user.Id,
+                Token = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
+            });
+            await _context.SaveChangesAsync();
+
+            // Set cookies
+            SetTokenCookies(httpContext.Response, accessToken, refreshToken);
+        }
+
+        private string GenerateAccessToken(User user)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -380,19 +491,54 @@ namespace F1Predictions.Services
             var claims = new[]
             {
                 new Claim("auth_type", "user"),
-                new Claim("id", id.ToString()),
-                new Claim("firstName", firstName),
-                new Claim("lastName", lastName),
-                new Claim("phone", phone)
+                new Claim("id", user.Id.ToString()),
+                new Claim("firstName", user.FirstName),
+                new Claim("lastName", user.LastName),
+                new Claim("phone", user.Phone)
             };
 
             var token = new JwtSecurityToken(
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(7),
+                expires: DateTime.UtcNow.AddMinutes(15), // Short-lived access token
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        private string GenerateRefreshToken()
+        {
+            var randomBytes = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+            return Convert.ToBase64String(randomBytes);
+        }
+
+        private void SetTokenCookies(HttpResponse response, string accessToken, string refreshToken)
+        {
+            var isProduction = !(_config["ASPNETCORE_ENVIRONMENT"] == "Development");
+
+            var accessCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = isProduction, // HTTPS only in production
+                SameSite = SameSiteMode.Strict,
+                Path = "/",
+                Expires = DateTime.UtcNow.AddMinutes(15)
+            };
+            response.Cookies.Append("access_token", accessToken, accessCookieOptions);
+
+            var refreshCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = isProduction,
+                SameSite = SameSiteMode.Strict,
+                Path = "/",
+                Expires = DateTime.UtcNow.AddDays(7)
+            };
+            response.Cookies.Append("refresh_token", refreshToken, refreshCookieOptions);
+        }
+
+        #endregion
     }
 }
