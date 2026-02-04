@@ -6,12 +6,14 @@ import { PredictionsComponent } from './pages/predictions/predictions.component'
 import { MoreComponent } from './pages/more/more.component';
 import { LoginComponent } from './pages/login/login.component';
 import { SignupComponent } from './pages/signup/signup.component';
+import { LeaguesComponent } from './pages/leagues/leagues.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
     { path: 'schedule', component: ScheduleComponent },
     { path: 'results', component: ResultsComponent },
     { path: 'predictions', component: PredictionsComponent },
+    { path: 'leagues', component: LeaguesComponent },
     { path: 'more', component: MoreComponent },
     { path: 'login', component: LoginComponent },
     { path: 'signup', component: SignupComponent },

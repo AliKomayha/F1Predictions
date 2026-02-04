@@ -1,5 +1,6 @@
 using F1Predictions.Data;
 using F1Predictions.Services;
+using F1Predictions.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -63,6 +64,7 @@ builder.Services.AddScoped<SessionsService>();
 builder.Services.AddScoped<SessionResultsService>();
 builder.Services.AddScoped<PointsSystemService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<ILeaguesService, LeaguesService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(

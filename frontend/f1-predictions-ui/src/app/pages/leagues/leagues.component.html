@@ -1,0 +1,264 @@
+<div class="leagues-page">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-title">
+                <div class="trophy-icon">🏆</div>
+                <div>
+                    <h1>My Leagues</h1>
+                    <p class="subtitle">Compete with friends and climb the leaderboard</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-secondary" (click)="openJoinModal()">
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    Join League
+                </button>
+                <button class="btn-primary" (click)="openCreateModal()">
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Create League
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (leaguesService.isLoading()) {
+    <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <span>Loading leagues...</span>
+    </div>
+    }
+
+    <!-- Not Logged In State -->
+    @if (!authService.isLoggedIn()) {
+    <div class="empty-state">
+        <div class="empty-icon">🔐</div>
+        <h2>Sign in Required</h2>
+        <p>Please sign in to view and manage your leagues</p>
+        <a routerLink="/login" class="btn-primary">Sign In</a>
+    </div>
+    }
+
+    <!-- Leagues Grid -->
+    @if (authService.isLoggedIn() && !leaguesService.isLoading()) {
+    @if (leaguesService.leagues().length === 0) {
+    <div class="empty-state">
+        <div class="empty-icon">🏁</div>
+        <h2>No Leagues Yet</h2>
+        <p>Create your first league or join an existing one to start competing!</p>
+        <div class="empty-actions">
+            <button class="btn-secondary" (click)="openJoinModal()">Join a League</button>
+            <button class="btn-primary" (click)="openCreateModal()">Create League</button>
+        </div>
+    </div>
+    } @else {
+    <div class="leagues-grid">
+        @for (league of leaguesService.leagues(); track league.id) {
+        <div class="league-card" [class.owner-card]="isOwner(league)">
+            <!-- Owner Badge -->
+            @if (isOwner(league)) {
+            <div class="owner-badge">
+                <svg fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+                Owner
+            </div>
+            }
+
+            <div class="card-header">
+                <h3 class="league-name">{{ league.name }}</h3>
+                @if (league.description) {
+                <p class="league-description">{{ league.description }}</p>
+                }
+            </div>
+
+            <div class="card-stats">
+                <div class="stat">
+                    <span class="stat-value">{{ league.memberCount }}</span>
+                    <span class="stat-label">Members</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">{{ league.championshipName }}</span>
+                    <span class="stat-label">Season</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">{{ league.isPublic ? 'Public' : 'Private' }}</span>
+                    <span class="stat-label">Visibility</span>
+                </div>
+            </div>
+
+            <div class="card-footer">
+                <div class="invite-section">
+                    @if (league.inviteCode && isOwner(league)) {
+                    <div class="invite-code">
+                        <span class="code">{{ league.inviteCode }}</span>
+                        <button class="copy-btn" (click)="copyInviteCode(league)"
+                            [class.copied]="copiedLeagueId() === league.id">
+                            @if (copiedLeagueId() === league.id) {
+                            <svg fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            } @else {
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                            </svg>
+                            }
+                        </button>
+                    </div>
+                    }
+                </div>
+                <button class="view-btn">
+                    View League
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        }
+    </div>
+    }
+    }
+
+    <!-- Create League Modal -->
+    @if (showCreateModal()) {
+    <div class="modal-overlay" (click)="closeCreateModal()">
+        <div class="modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Create New League</h2>
+                <button class="close-btn" (click)="closeCreateModal()">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <form class="modal-form" (ngSubmit)="onCreateLeague()">
+                <!-- Success Message -->
+                @if (createSuccess()) {
+                <div class="alert alert-success">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <span>{{ createSuccess() }}</span>
+                </div>
+                }
+
+                <!-- Error Message -->
+                @if (createError()) {
+                <div class="alert alert-error">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <span>{{ createError() }}</span>
+                </div>
+                }
+
+                <div class="input-group">
+                    <label for="leagueName">League Name</label>
+                    <input type="text" id="leagueName" name="leagueName" [(ngModel)]="newLeagueName"
+                        placeholder="Enter league name" maxlength="100" required />
+                </div>
+
+                <div class="input-group">
+                    <label for="leagueDescription">Description (Optional)</label>
+                    <textarea id="leagueDescription" name="leagueDescription" [(ngModel)]="newLeagueDescription"
+                        placeholder="Add a description for your league" maxlength="500" rows="3"></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" (click)="closeCreateModal()">Cancel</button>
+                    <button type="submit" class="btn-primary" [disabled]="leaguesService.isLoading()">
+                        @if (leaguesService.isLoading()) {
+                        <div class="loading-spinner small"></div>
+                        Creating...
+                        } @else {
+                        Create League
+                        }
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    }
+
+    <!-- Join League Modal -->
+    @if (showJoinModal()) {
+    <div class="modal-overlay" (click)="closeJoinModal()">
+        <div class="modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Join a League</h2>
+                <button class="close-btn" (click)="closeJoinModal()">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <form class="modal-form" (ngSubmit)="onJoinLeague()">
+                <!-- Error Message -->
+                @if (joinError()) {
+                <div class="alert alert-error">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <span>{{ joinError() }}</span>
+                </div>
+                }
+
+                <!-- Success Message -->
+                @if (joinSuccess()) {
+                <div class="alert alert-success">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <span>{{ joinSuccess() }}</span>
+                </div>
+                }
+
+                <div class="input-group">
+                    <label for="inviteCode">Invite Code</label>
+                    <input type="text" id="inviteCode" name="inviteCode" [(ngModel)]="inviteCode"
+                        placeholder="Enter invite code" maxlength="20" required />
+                </div>
+
+                <p class="helper-text">Ask a league owner for their invite code to join their league.</p>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" (click)="closeJoinModal()">Cancel</button>
+                    <button type="submit" class="btn-primary" [disabled]="leaguesService.isLoading()">
+                        @if (leaguesService.isLoading()) {
+                        <div class="loading-spinner small"></div>
+                        Joining...
+                        } @else {
+                        Join League
+                        }
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    }
+</div>
