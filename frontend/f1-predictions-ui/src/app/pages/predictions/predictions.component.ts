@@ -56,6 +56,12 @@ export class PredictionsComponent implements OnInit {
         return member && user && member.userId === user.id;
     });
 
+    isPredictionsLocked = computed(() => {
+        const race = this.selectedRace();
+        if (!race) return false;
+        return new Date() >= new Date(race.predictionsLockedAt);
+    });
+
     constructor(
         public predictionsService: PredictionsService,
         public leaguesService: LeaguesService,
@@ -324,6 +330,26 @@ export class PredictionsComponent implements OnInit {
             case 'Text': return !!form.text?.trim();
             default: return false;
         }
+    }
+
+    getTimeUntilLock(): string {
+        const race = this.selectedRace();
+        if (!race) return '';
+
+        const lockTime = new Date(race.predictionsLockedAt);
+        const now = new Date();
+        const diff = lockTime.getTime() - now.getTime();
+
+        if (diff <= 0) return 'Locked';
+
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+        if (hours > 24) {
+            const days = Math.floor(hours / 24);
+            return `Locks in ${days}d ${hours % 24}h`;
+        }
+        return `Locks in ${hours}h ${minutes}m`;
     }
 
     hasPick(prediction: RacePrediction): boolean {

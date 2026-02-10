@@ -7,6 +7,9 @@ namespace F1Predictions.Services
     public class SessionsService
     {
         private readonly AppDbContext _context;
+        
+        // Fixed timezone offset for Lebanon (GMT+2)
+        private static readonly TimeSpan ApplicationTimeZoneOffset = TimeSpan.FromHours(2);
 
         public SessionsService(AppDbContext context)
         {
@@ -62,12 +65,22 @@ namespace F1Predictions.Services
         {
             _context.Sessions.Add(session);
             await _context.SaveChangesAsync();
+
+            // Update race lock time if this is a qualifying session
+            if (session.Type == "Qualifying" || session.Type == "Sprint Qualifying")
+            {
+                await UpdateRaceLockTime(session.RaceId);
+            }
         }
 
         public async Task Update(Session session)
         {
             var existing = await _context.Sessions.FindAsync(session.Id);
             if (existing == null) return;
+
+            var oldRaceId = existing.RaceId;
+            var wasQualifying = existing.Type == "Qualifying" || existing.Type == "Sprint Qualifying";
+            var isQualifying = session.Type == "Qualifying" || session.Type == "Sprint Qualifying";
 
             existing.RaceId = session.RaceId;
             existing.ChampionshipId = session.ChampionshipId;
@@ -76,6 +89,17 @@ namespace F1Predictions.Services
             existing.Laps = session.Laps;
 
             await _context.SaveChangesAsync();
+
+            // Update race lock time if qualifying session changed
+            if (isQualifying || wasQualifying)
+            {
+                await UpdateRaceLockTime(session.RaceId);
+                // If race changed, update the old race too
+                if (oldRaceId != session.RaceId && wasQualifying)
+                {
+                    await UpdateRaceLockTime(oldRaceId);
+                }
+            }
         }
 
         public async Task Delete(int id)
@@ -83,8 +107,17 @@ namespace F1Predictions.Services
             var session = await _context.Sessions.FindAsync(id);
             if (session == null) return;
 
+            var raceId = session.RaceId;
+            var wasQualifying = session.Type == "Qualifying" || session.Type == "Sprint Qualifying";
+
             _context.Sessions.Remove(session);
             await _context.SaveChangesAsync();
+
+            // Update race lock time if a qualifying session was deleted
+            if (wasQualifying)
+            {
+                await UpdateRaceLockTime(raceId);
+            }
         }
 
         // Get session types for dropdown
@@ -96,6 +129,32 @@ namespace F1Predictions.Services
                 "Qualifying", "Sprint Qualifying",
                 "Sprint", "Race"
             };
+        }
+
+        private async Task UpdateRaceLockTime(int raceId)
+        {
+            var race = await _context.Races.FindAsync(raceId);
+            if (race == null) return;
+
+            // Check for Sprint Qualifying first (sprint weekends), then regular Qualifying
+            var session = await _context.Sessions
+                .Where(s => s.RaceId == raceId &&
+                       (s.Type == "Sprint Qualifying" || s.Type == "Qualifying"))
+                .OrderBy(s => s.DateTime)  // Get the earliest one
+                .FirstOrDefaultAsync();
+
+            if (session != null)
+            {
+                // Convert DateTime to DateTimeOffset using fixed GMT+2 offset
+                race.PredictionsLockedAt = new DateTimeOffset(session.DateTime, ApplicationTimeZoneOffset);
+            }
+            else
+            {
+                // If no qualifying session exists, default to far future
+                race.PredictionsLockedAt = DateTimeOffset.Parse("9999-12-31 23:59:59 +00:00");
+            }
+
+            await _context.SaveChangesAsync();
         }
     }
 }

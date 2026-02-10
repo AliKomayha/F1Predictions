@@ -140,6 +140,25 @@
         </div>
     </div>
 
+    <!-- Lock Status Banner -->
+    @if (selectedRace()) {
+    <div class="lock-status-banner" [class.locked]="isPredictionsLocked()" [class.warning]="!isPredictionsLocked()">
+        @if (isPredictionsLocked()) {
+        <div class="lock-icon">🔒</div>
+        <div class="lock-message">
+            <strong>Predictions Locked</strong>
+            <span>The qualifying session has started</span>
+        </div>
+        } @else {
+        <div class="lock-icon">⏰</div>
+        <div class="lock-message">
+            <strong>{{ getTimeUntilLock() }}</strong>
+            <span>Until predictions lock</span>
+        </div>
+        }
+    </div>
+    }
+
     <!-- Loading -->
     @if (predictionsService.isLoading()) {
     <div class="loading-container">
@@ -289,7 +308,7 @@
                 <div class="input-group">
                     <label class="field-label">Select Driver</label>
                     <select class="field-select" (change)="onDriverChange(prediction.weeklyPredictionId, $event)"
-                        [value]="form.driverId ?? ''">
+                        [value]="form.driverId ?? ''" [disabled]="isPredictionsLocked() || form.saving">
                         <option value="">Choose a driver...</option>
                         @for (driver of predictionsService.drivers(); track driver.id) {
                         <option [value]="driver.id">#{{ driver.championshipNumber }} {{ driver.firstName }} {{
@@ -304,7 +323,7 @@
                 <div class="input-group">
                     <label class="field-label">Select Team</label>
                     <select class="field-select" (change)="onTeamChange(prediction.weeklyPredictionId, $event)"
-                        [value]="form.teamId ?? ''">
+                        [value]="form.teamId ?? ''" [disabled]="isPredictionsLocked() || form.saving">
                         <option value="">Choose a team...</option>
                         @for (team of predictionsService.teams(); track team.id) {
                         <option [value]="team.id">{{ team.displayName }}</option>
@@ -319,7 +338,8 @@
                     <label class="field-label">Your Prediction</label>
                     <textarea class="field-textarea" [value]="form.text"
                         (input)="onTextChange(prediction.weeklyPredictionId, $event)"
-                        placeholder="Type your prediction..." maxlength="500" rows="2"></textarea>
+                        placeholder="Type your prediction..." maxlength="500" rows="2"
+                        [disabled]="isPredictionsLocked() || form.saving"></textarea>
                 </div>
                 }
 
@@ -349,7 +369,7 @@
 
                 <!-- Submit Button -->
                 <button class="submit-btn" (click)="submitPrediction(prediction.weeklyPredictionId)"
-                    [disabled]="!isFormValid(prediction.weeklyPredictionId) || form.saving">
+                    [disabled]="isPredictionsLocked() || !isFormValid(prediction.weeklyPredictionId) || form.saving">
                     @if (form.saving) {
                     <div class="loading-spinner small"></div>
                     Saving...

@@ -85,5 +85,6 @@ namespace F1Predictions.Models.DTOs
         public int RoundNumber { get; set; }
         public DateTime RaceDate { get; set; }
         public string TrackName { get; set; } = string.Empty;
+        public DateTimeOffset PredictionsLockedAt { get; set; }
     }
 }

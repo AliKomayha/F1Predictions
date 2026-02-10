@@ -27,6 +27,9 @@ namespace F1Predictions.Models
         [Column("race_date")]
         public DateTime RaceDate { get; set; }
 
+        [Required]
+        public DateTimeOffset PredictionsLockedAt { get; set; }
+
         // Navigation
         [ForeignKey("ChampionshipId")]
         public Championship Championship { get; set; }

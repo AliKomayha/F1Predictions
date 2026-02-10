@@ -114,6 +114,88 @@
     }
 }
 
+// === LOCK STATUS BANNER ===
+.lock-status-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    margin-bottom: 24px;
+    border-radius: 14px;
+    transition: all 0.3s ease;
+
+    &.locked {
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+
+        .lock-icon {
+            font-size: 26px;
+        }
+
+        .lock-message strong {
+            color: #ef4444;
+        }
+
+        .lock-message span {
+            color: rgba(239, 68, 68, 0.7);
+        }
+    }
+
+    &.warning {
+        background: rgba(251, 191, 36, 0.12);
+        border: 1px solid rgba(251, 191, 36, 0.25);
+
+        .lock-icon {
+            font-size: 26px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .lock-message strong {
+            color: #fbbf24;
+        }
+
+        .lock-message span {
+            color: rgba(251, 191, 36, 0.7);
+        }
+    }
+}
+
+.lock-icon {
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.lock-message {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    strong {
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    span {
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.2;
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
 // === CTA BANNER (Make Your Prediction) ===
 .cta-banner {
     display: flex;

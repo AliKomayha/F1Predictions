@@ -212,7 +212,8 @@ namespace F1Predictions.Services
                 await connection.OpenAsync();
 
                 var sql = @"
-                    SELECT r.Id, r.race_name, r.round_number, r.race_date, tr.Name AS TrackName
+                    SELECT r.Id, r.race_name, r.round_number, r.race_date, 
+                           r.PredictionsLockedAt, tr.Name AS TrackName
                     FROM Races r
                     INNER JOIN Tracks tr ON r.track_id = tr.Id
                     WHERE r.championship_id = (SELECT ChampionshipId FROM Leagues WHERE Id = @LeagueId)
@@ -230,7 +231,8 @@ namespace F1Predictions.Services
                         RaceName = reader.GetString(reader.GetOrdinal("race_name")),
                         RoundNumber = reader.GetInt32(reader.GetOrdinal("round_number")),
                         RaceDate = reader.GetDateTime(reader.GetOrdinal("race_date")),
-                        TrackName = reader.GetString(reader.GetOrdinal("TrackName"))
+                        TrackName = reader.GetString(reader.GetOrdinal("TrackName")),
+                        PredictionsLockedAt = reader.GetDateTimeOffset(reader.GetOrdinal("PredictionsLockedAt"))
                     });
                 }
 
@@ -249,13 +251,36 @@ namespace F1Predictions.Services
                 await using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                // 1. Verify league membership
+                // 1. Check if predictions are locked for this race
+                var checkLockSql = @"
+                    SELECT r.PredictionsLockedAt 
+                    FROM Races r
+                    INNER JOIN WeeklyPredictions wp ON r.Id = wp.RaceId
+                    WHERE wp.Id = @WpId";
+
+                DateTimeOffset? lockTime = null;
+                await using (var lockCheckCmd = new SqlCommand(checkLockSql, connection))
+                {
+                    lockCheckCmd.Parameters.AddWithValue("@WpId", dto.WeeklyPredictionId);
+                    var result = await lockCheckCmd.ExecuteScalarAsync();
+                    if (result != null && result != DBNull.Value)
+                    {
+                        lockTime = (DateTimeOffset)result;
+                    }
+                }
+
+                if (lockTime.HasValue && DateTimeOffset.UtcNow >= lockTime.Value)
+                {
+                    return ServiceResult<bool>.Fail("Predictions are locked. The qualifying session has started.");
+                }
+
+                // 2. Verify league membership
                 if (!await IsLeagueMember(connection, userId, dto.LeagueId))
                 {
                     return ServiceResult<bool>.Fail("You are not a member of this league.");
                 }
 
-                // 2. Get the weekly prediction to validate AllowedTargetTypes
+                // 3. Get the weekly prediction to validate AllowedTargetTypes
                 string? allowedTargetTypes = null;
                 bool isActive = false;
                 var getWpSql = "SELECT AllowedTargetTypes, IsActive FROM WeeklyPredictions WHERE Id = @WpId";
@@ -280,14 +305,14 @@ namespace F1Predictions.Services
                     return ServiceResult<bool>.Fail("This prediction is no longer active.");
                 }
 
-                // 3. Validate target type against allowed types
+                // 4. Validate target type against allowed types
                 var allowed = allowedTargetTypes.Split(',').Select(s => s.Trim()).ToList();
                 if (!allowed.Contains(dto.TargetType))
                 {
                     return ServiceResult<bool>.Fail($"Target type '{dto.TargetType}' is not allowed for this prediction. Allowed: {allowedTargetTypes}");
                 }
 
-                // 4. Validate required fields based on target type
+                // 5. Validate required fields based on target type
                 switch (dto.TargetType)
                 {
                     case "Driver":
@@ -306,7 +331,7 @@ namespace F1Predictions.Services
                         return ServiceResult<bool>.Fail($"Invalid target type: {dto.TargetType}");
                 }
 
-                // 5. Check if prediction is locked
+                // 6. Check if prediction is locked
                 var checkLockedSql = @"
                     SELECT IsLocked FROM UserPredictions 
                     WHERE WeeklyPredictionId = @WpId AND LeagueId = @LeagueId AND UserId = @UserId";
@@ -322,7 +347,7 @@ namespace F1Predictions.Services
                     }
                 }
 
-                // 6. Upsert: check if exists, then update or insert
+                // 7. Upsert: check if exists, then update or insert
                 var checkExistsSql = @"
                     SELECT Id FROM UserPredictions 
                     WHERE WeeklyPredictionId = @WpId AND LeagueId = @LeagueId AND UserId = @UserId";

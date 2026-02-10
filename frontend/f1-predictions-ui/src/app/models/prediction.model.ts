@@ -46,4 +46,5 @@ export interface RaceOption {
     roundNumber: number;
     raceDate: Date;
     trackName: string;
+    predictionsLockedAt: Date;
 }
