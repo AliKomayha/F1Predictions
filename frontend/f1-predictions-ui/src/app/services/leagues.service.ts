@@ -2,7 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, tap, catchError, of, map } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { League, CreateLeagueRequest } from '../models/league.model';
+import { League, CreateLeagueRequest, LeagueMember } from '../models/league.model';
 
 export interface LeagueResponse {
     success: boolean;
@@ -23,11 +23,13 @@ export class LeaguesService {
 
     // Reactive state using signals
     private leaguesSignal = signal<League[]>([]);
+    private membersSignal = signal<LeagueMember[]>([]);
     private isLoadingSignal = signal<boolean>(false);
     private errorSignal = signal<string>('');
 
     // Public computed signals
     readonly leagues = this.leaguesSignal.asReadonly();
+    readonly members = this.membersSignal.asReadonly();
     readonly isLoading = this.isLoadingSignal.asReadonly();
     readonly error = this.errorSignal.asReadonly();
     readonly leaguesCount = computed(() => this.leaguesSignal().length);
@@ -50,6 +52,23 @@ export class LeaguesService {
                     return of([]);
                 })
             );
+    }
+
+    getLeagueMembers(leagueId: number): Observable<LeagueMember[]> {
+        return this.http.get<LeagueMember[]>(
+            `${this.apiUrl}/league-members/${leagueId}`,
+            { withCredentials: true }
+        ).pipe(
+            tap(members => this.membersSignal.set(members)),
+            catchError((error: HttpErrorResponse) => {
+                this.errorSignal.set('Failed to load league members');
+                return of([]);
+            })
+        );
+    }
+
+    clearMembers(): void {
+        this.membersSignal.set([]);
     }
 
     createLeague(request: CreateLeagueRequest): Observable<LeagueResponse> {

@@ -1,0 +1,168 @@
+@model List<WeeklyPrediction>
+
+@{
+    ViewData["Title"] = "Weekly Predictions";
+    var races = ViewBag.Races as SelectList;
+    var selectedRaceId = ViewBag.SelectedRaceId as int?;
+    var selectedRace = ViewBag.SelectedRace as Race;
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-card-checklist me-2"></i>Weekly Predictions
+        </h1>
+        @if (selectedRaceId.HasValue)
+        {
+            <a asp-action="Create" asp-route-raceId="@selectedRaceId" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Add Prediction
+            </a>
+        }
+    </div>
+
+    <!-- Race Selector -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-8">
+                    <label for="raceId" class="form-label fw-semibold">
+                        <i class="bi bi-flag me-1"></i>Select Race
+                    </label>
+                    <select name="raceId" id="raceId" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- Select Race --</option>
+                        @if (races != null)
+                        {
+                            foreach (var item in races.Items)
+                            {
+                                var selectItem = item as dynamic;
+                                <option value="@selectItem.Id" selected="@(selectedRaceId == selectItem.Id)">
+                                    @selectItem.Name
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="bi bi-filter me-1"></i>View Predictions
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (selectedRaceId.HasValue && selectedRace != null)
+    {
+        <div class="alert alert-info d-flex align-items-center justify-content-between mb-4">
+            <span>
+                <i class="bi bi-info-circle-fill me-2"></i>
+                Predictions for <strong>@selectedRace.RaceName</strong> (@selectedRace.Championship?.Year)
+            </span>
+            @if (!Model.Any())
+            {
+                <form asp-action="InitializeDefault" method="post" class="d-inline">
+                    <input type="hidden" name="raceId" value="@selectedRaceId" />
+                    <button type="submit" class="btn btn-sm btn-success">
+                        <i class="bi bi-magic me-1"></i>Initialize Default Predictions
+                    </button>
+                </form>
+            }
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Type</th>
+                                <th>Allowed Targets</th>
+                                <th>Admin Text</th>
+                                <th class="text-center">Active</th>
+                                <th class="text-end" style="width: 120px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var prediction in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary">@prediction.PredictionType</span>
+                                    </td>
+                                    <td>
+                                        @{
+                                            var targets = prediction.AllowedTargetTypes?.Split(',') ?? Array.Empty<string>();
+                                        }
+                                        @foreach (var target in targets)
+                                        {
+                                            var trimmed = target.Trim();
+                                            <span class="badge @(trimmed == "Driver" ? "bg-success" : trimmed == "Team" ? "bg-warning text-dark" : "bg-secondary") me-1">
+                                                @trimmed
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-muted">
+                                        @(string.IsNullOrEmpty(prediction.AdminDefinedText) ? "-" : prediction.AdminDefinedText)
+                                    </td>
+                                    <td class="text-center">
+                                        @if (prediction.IsActive)
+                                        {
+                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-x-circle-fill text-danger"></i>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="Edit" asp-route-id="@prediction.Id" class="btn btn-sm btn-outline-warning">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form asp-action="Delete" method="post" class="d-inline"
+                                              onsubmit="return confirm('Are you sure you want to delete this prediction?');">
+                                            <input type="hidden" name="id" value="@prediction.Id" />
+                                            <input type="hidden" name="raceId" value="@selectedRaceId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-card-checklist display-1 text-muted mb-3"></i>
+                    <h4 class="text-muted">No Predictions Defined</h4>
+                    <p class="text-muted mb-4">Initialize default predictions or add them manually.</p>
+                    <form asp-action="InitializeDefault" method="post" class="d-inline">
+                        <input type="hidden" name="raceId" value="@selectedRaceId" />
+                        <button type="submit" class="btn btn-success me-2">
+                            <i class="bi bi-magic me-1"></i>Initialize Default Predictions
+                        </button>
+                    </form>
+                    <a asp-action="Create" asp-route-raceId="@selectedRaceId" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>Add Manually
+                    </a>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-flag display-1 text-muted mb-3"></i>
+                <h4 class="text-muted">Select a Race</h4>
+                <p class="text-muted mb-0">Choose a race to view its weekly predictions.</p>
+            </div>
+        </div>
+    }
+</div>

@@ -63,8 +63,10 @@ builder.Services.AddScoped<RacesService>();
 builder.Services.AddScoped<SessionsService>();
 builder.Services.AddScoped<SessionResultsService>();
 builder.Services.AddScoped<PointsSystemService>();
+builder.Services.AddScoped<WeeklyPredictionsService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ILeaguesService, LeaguesService>();
+builder.Services.AddScoped<IPredictionsService, PredictionsService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(

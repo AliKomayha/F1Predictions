@@ -193,6 +193,50 @@ namespace F1Predictions.Services
             }
         }
 
+        
+        public async Task<ServiceResult<List<LeagueMemberDto>>> GetLeagueMembers(int userId, int leagueId)
+        {
+            try
+            {
+                var leagues = new List<LeagueMemberDto>();
+                await using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var sql = @"
+                            SELECT
+                                lm.UserId, u.FirstName, u.LastName, lm.Role, lm.JoinedAt
+                            FROM LeagueMembers lm
+                            INNER JOIN Users u ON u.Id = lm.UserId
+                            WHERE lm.LeagueId = @LeagueId
+                              AND lm.IsActive = 1
+                              AND EXISTS (
+                                  SELECT 1
+                                  FROM LeagueMembers lm2
+                                  WHERE lm2.LeagueId = @LeagueId
+                                    AND lm2.UserId = @UserId
+                                    AND lm2.IsActive = 1
+                              )
+                            ORDER BY lm.JoinedAt";
+
+                await using var cmd = new SqlCommand(sql, connection);
+                cmd.Parameters.AddWithValue("@UserId", userId);
+                cmd.Parameters.AddWithValue("@LeagueId", leagueId);
+
+                await using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    leagues.Add(MapToLeagueMemberDto(reader));
+                }
+
+                return ServiceResult<List<LeagueMemberDto>>.Succeed(leagues);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult<List<LeagueMemberDto>>.Fail($"An error occurred while retrieving leagues: {ex.Message}");
+            }
+        }
+            
+
         #region Private Helper Methods
 
         /// <summary>
@@ -277,6 +321,19 @@ namespace F1Predictions.Services
                 MemberCount = reader.GetInt32(reader.GetOrdinal("MemberCount"))
             };
         }
+
+        private static LeagueMemberDto MapToLeagueMemberDto(SqlDataReader reader)
+        {
+            return new LeagueMemberDto
+            {
+                UserId = reader.GetInt32(reader.GetOrdinal("UserId")),
+                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                Role = reader.GetString(reader.GetOrdinal("Role")),
+                JoinedAt = reader.GetDateTime(reader.GetOrdinal("JoinedAt"))
+            };
+        }
+
 
         #endregion
     }

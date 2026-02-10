@@ -17,6 +17,10 @@ namespace F1Predictions.Models
         [Required]
         public int WeeklyPredictionId { get; set; }
 
+        [Required]
+        [MaxLength(20)]
+        public string TargetType { get; set; } = null!; // Driver, Team, Text
+
         public int? DriverId { get; set; }
 
         public int? TeamId { get; set; }

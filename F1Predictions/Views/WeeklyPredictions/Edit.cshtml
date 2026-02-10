@@ -1,0 +1,88 @@
+@model WeeklyPrediction
+
+@{
+    ViewData["Title"] = "Edit Weekly Prediction";
+    var races = ViewBag.Races as SelectList;
+    var predictionTypes = ViewBag.PredictionTypes as SelectList;
+    var allowedTargetTypes = ViewBag.AllowedTargetTypes as SelectList;
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning">
+                    <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Edit Weekly Prediction</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="CreatedAt" />
+
+                        <div class="mb-3">
+                            <label asp-for="RaceId" class="form-label fw-semibold">
+                                Race <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="RaceId" class="form-select" asp-items="@races">
+                                <option value="">-- Select Race --</option>
+                            </select>
+                            <span asp-validation-for="RaceId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="PredictionType" class="form-label fw-semibold">
+                                    Prediction Type <span class="text-danger">*</span>
+                                </label>
+                                <select asp-for="PredictionType" class="form-select" asp-items="@predictionTypes">
+                                    <option value="">-- Select Type --</option>
+                                </select>
+                                <span asp-validation-for="PredictionType" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="AllowedTargetTypes" class="form-label fw-semibold">
+                                    Allowed Target Types <span class="text-danger">*</span>
+                                </label>
+                                <select asp-for="AllowedTargetTypes" class="form-select" asp-items="@allowedTargetTypes">
+                                    <option value="">-- Select --</option>
+                                </select>
+                                <span asp-validation-for="AllowedTargetTypes" class="text-danger small"></span>
+                                <small class="text-muted">Driver=1pt, Team=2pts, Text=1pt</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AdminDefinedText" class="form-label fw-semibold">
+                                Admin Defined Text
+                            </label>
+                            <textarea asp-for="AdminDefinedText" class="form-control" rows="2"
+                                      placeholder="e.g. Who will flop this race?"></textarea>
+                            <small class="text-muted">Question or description shown to users</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold d-block">Status</label>
+                            <div class="form-check form-switch mt-2">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsActive" class="form-check-label">Active</label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-lg me-1"></i>Update
+                            </button>
+                            <a asp-action="Index" asp-route-raceId="@Model.RaceId" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Back
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

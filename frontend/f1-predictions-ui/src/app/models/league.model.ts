@@ -21,3 +21,11 @@ export interface CreateLeagueRequest {
 export interface JoinLeagueResponse {
     message: string;
 }
+
+export interface LeagueMember {
+    userId: number;
+    firstName: string;
+    lastName: string;
+    role: string;
+    joinedAt: Date;
+}

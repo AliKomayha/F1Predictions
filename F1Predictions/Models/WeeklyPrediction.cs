@@ -13,16 +13,14 @@ namespace F1Predictions.Models
 
         [Required]
         [MaxLength(50)]
-        public string PredictionType { get; set; } = null!; // Pole, P1, P2, P3, SprintPole, SprintWinner, GoodSurprise, BigFlop, Crazy, Custom
-
-        [Required]
-        [MaxLength(20)]
-        public string TargetType { get; set; } = null!; // Driver, Team, UserText
+        public string PredictionType { get; set; } = null!; // Pole, P1, P2, P3, SprintPole, SprintWinner, Surprise, Flop, Crazy, Custom
 
         [MaxLength(500)]
         public string? AdminDefinedText { get; set; }
 
-        public int PointsAvailable { get; set; } = 1;
+        [Required]
+        [MaxLength(50)]
+        public string AllowedTargetTypes { get; set; } = null!; // "Driver" | "Driver,Team" | "Text"
 
         public bool IsActive { get; set; } = true;
 

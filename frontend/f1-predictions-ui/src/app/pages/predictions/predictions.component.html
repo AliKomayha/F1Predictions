@@ -1,6 +1,406 @@
-<div class="page-container">
-    <div class="placeholder-content">
-        <h1>Predictions</h1>
-        <p>Make your predictions here</p>
+<div class="predictions-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-title">
+                <div class="header-icon">🔮</div>
+                <div>
+                    <h1>Predictions</h1>
+                    <p class="subtitle">Make your race predictions and earn points</p>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Not Logged In -->
+    @if (!authService.isLoggedIn()) {
+    <div class="empty-state">
+        <div class="empty-icon">🔐</div>
+        <h2>Sign in Required</h2>
+        <p>Please sign in to make your predictions</p>
+        <a routerLink="/login" class="btn-primary">Sign In</a>
+    </div>
+    }
+
+    @if (authService.isLoggedIn()) {
+    <!-- League Selector (always visible) -->
+    <div class="selectors-container">
+        <div class="selector-card">
+            <label class="selector-label">
+                <svg class="label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Select League
+            </label>
+            <select class="selector-select" (change)="onLeagueChange($event)" [value]="selectedLeagueId() ?? ''">
+                <option value="">Choose a league...</option>
+                @for (league of leaguesService.leagues(); track league.id) {
+                <option [value]="league.id">{{ league.name }}</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- ======================== -->
+    <!-- VIEW: MEMBERS LIST       -->
+    <!-- ======================== -->
+    @if (viewMode() === 'members' && selectedLeagueId()) {
+
+    <!-- Make Prediction CTA -->
+    <div class="cta-banner" (click)="onMakePredictionClick()">
+        <div class="cta-content">
+            <div class="cta-icon">🏁</div>
+            <div class="cta-text">
+                <h3>Make Your Prediction</h3>
+                <p>Select a race and submit your picks</p>
+            </div>
+        </div>
+        <svg class="cta-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+    </div>
+
+    <!-- Members List -->
+    @if (leaguesService.members().length > 0) {
+    <div class="section-header">
+        <h2>League Members</h2>
+        <span class="member-count">{{ leaguesService.members().length }} members</span>
+    </div>
+
+    <div class="members-list">
+        @for (member of leaguesService.members(); track member.userId) {
+        <div class="member-card" [class.is-self]="isSelf(member)" (click)="onMemberClick(member)">
+            <div class="member-info">
+                <div class="member-avatar" [class.self-avatar]="isSelf(member)">
+                    {{ getMemberInitials(member) }}
+                </div>
+                <div class="member-details">
+                    <div class="member-name">
+                        {{ member.firstName }} {{ member.lastName }}
+                        @if (isSelf(member)) {
+                        <span class="you-tag">You</span>
+                        }
+                    </div>
+                    <div class="member-role">{{ member.role }}</div>
+                </div>
+            </div>
+            <svg class="member-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </div>
+        }
+    </div>
+    }
+    }
+
+    <!-- ======================== -->
+    <!-- VIEW: PREDICTIONS        -->
+    <!-- ======================== -->
+    @if ((viewMode() === 'make-predictions' || viewMode() === 'view-predictions') && selectedMember()) {
+
+    <!-- Back Button + Member Header -->
+    <div class="view-header">
+        <button class="back-btn" (click)="goBackToMembers()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Members
+        </button>
+        <div class="viewing-member">
+            <div class="member-avatar small" [class.self-avatar]="isViewingSelf()">
+                {{ getMemberInitials(selectedMember()!) }}
+            </div>
+            <span class="viewing-label">
+                @if (isViewingSelf()) {
+                Your Predictions
+                } @else {
+                {{ selectedMember()!.firstName }}'s Predictions
+                }
+            </span>
+        </div>
+    </div>
+
+    <!-- Race Selector -->
+    <div class="selectors-container">
+        <div class="selector-card">
+            <label class="selector-label">
+                <svg class="label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                </svg>
+                Select Race
+            </label>
+            <select class="selector-select" (change)="onRaceChange($event)" [value]="selectedRaceId() ?? ''">
+                <option value="">Choose a race...</option>
+                @for (race of predictionsService.races(); track race.id) {
+                <option [value]="race.id">R{{ race.roundNumber }} — {{ race.raceName }} ({{ race.trackName }})</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    @if (predictionsService.isLoading()) {
+    <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <span>Loading predictions...</span>
+    </div>
+    }
+
+    <!-- Error -->
+    @if (predictionsService.error()) {
+    <div class="alert alert-error">
+        <svg fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clip-rule="evenodd" />
+        </svg>
+        <span>{{ predictionsService.error() }}</span>
+    </div>
+    }
+
+    <!-- Race Info Banner -->
+    @if (selectedRace() && !predictionsService.isLoading()) {
+    <div class="race-banner">
+        <div class="race-banner-content">
+            <div class="race-info">
+                <span class="race-flag">🏎️</span>
+                <div>
+                    <h3 class="race-name">{{ selectedRace()!.raceName }}</h3>
+                    <p class="race-track">{{ selectedRace()!.trackName }}</p>
+                </div>
+            </div>
+            <div class="race-meta">
+                <span class="race-round">Round {{ selectedRace()!.roundNumber }}</span>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- ======================== -->
+    <!-- PREDICTION CARDS          -->
+    <!-- ======================== -->
+    @if (selectedRaceId() && !predictionsService.isLoading() && predictionsService.predictions().length > 0) {
+    <div class="predictions-grid">
+        @for (prediction of predictionsService.predictions(); track prediction.weeklyPredictionId) {
+        <div class="prediction-card" [class.has-pick]="hasPick(prediction)"
+            [class.is-locked]="prediction.userPick?.isLocked">
+
+            <!-- Card Header -->
+            <div class="prediction-header">
+                <div class="prediction-type-info">
+                    <span class="prediction-icon">{{ getPredictionIcon(prediction.predictionType) }}</span>
+                    <div>
+                        <h4 class="prediction-type">{{ prediction.predictionType }}</h4>
+                        @if (prediction.adminDefinedText) {
+                        <p class="prediction-description">{{ prediction.adminDefinedText }}</p>
+                        }
+                    </div>
+                </div>
+                @if (hasPick(prediction)) {
+                <div class="status-badge saved">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Picked
+                </div>
+                } @else {
+                <div class="status-badge pending">
+                    @if (viewMode() === 'make-predictions') { Pending } @else { No Pick }
+                </div>
+                }
+            </div>
+
+            <!-- ======================== -->
+            <!-- READ-ONLY VIEW (other member) -->
+            <!-- ======================== -->
+            @if (viewMode() === 'view-predictions') {
+            @if (hasPick(prediction)) {
+            <div class="readonly-pick">
+                <div class="pick-label">Their Pick</div>
+                <div class="pick-value">
+                    @if (prediction.userPick?.targetType === 'Driver') {
+                    <span class="pick-type-tag driver">Driver</span>
+                    <span>{{ prediction.userPick?.driverName }}</span>
+                    } @else if (prediction.userPick?.targetType === 'Team') {
+                    <span class="pick-type-tag team">Team</span>
+                    <span>{{ prediction.userPick?.teamName }}</span>
+                    } @else if (prediction.userPick?.targetType === 'Text') {
+                    <span class="pick-type-tag text">Text</span>
+                    <span>{{ prediction.userPick?.text }}</span>
+                    }
+                </div>
+            </div>
+            } @else {
+            <div class="no-pick-message">
+                <span>No prediction submitted yet</span>
+            </div>
+            }
+            }
+
+            <!-- ======================== -->
+            <!-- EDITABLE FORM (self / make-predictions) -->
+            <!-- ======================== -->
+            @if (viewMode() === 'make-predictions') {
+
+            <!-- Locked Banner -->
+            @if (prediction.userPick?.isLocked) {
+            <div class="locked-banner">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span>Prediction locked — {{ prediction.userPick?.targetType === 'Driver' ?
+                    prediction.userPick?.driverName : prediction.userPick?.targetType === 'Team' ?
+                    prediction.userPick?.teamName : prediction.userPick?.text }}</span>
+            </div>
+            }
+
+            @if (!prediction.userPick?.isLocked) {
+            @if (getForm(prediction.weeklyPredictionId); as form) {
+            <div class="prediction-form">
+
+                <!-- Target Type Selector -->
+                @if (getAllowedTypes(prediction).length > 1) {
+                <div class="target-type-selector">
+                    <label class="field-label">Choose Type</label>
+                    <div class="type-toggle">
+                        @for (type of getAllowedTypes(prediction); track type) {
+                        <button class="type-btn" [class.active]="form.targetType === type"
+                            (click)="onTargetTypeChange(prediction.weeklyPredictionId, type)">
+                            {{ type }}
+                            <span class="points-badge">{{ getPointsForType(type) }}pt</span>
+                        </button>
+                        }
+                    </div>
+                </div>
+                } @else {
+                <div class="points-info">
+                    <span class="points-label">{{ getAllowedTypes(prediction)[0] }}</span>
+                    <span class="points-badge single">{{ getPointsForType(getAllowedTypes(prediction)[0]) }}pt</span>
+                </div>
+                }
+
+                <!-- Driver Selector -->
+                @if (form.targetType === 'Driver') {
+                <div class="input-group">
+                    <label class="field-label">Select Driver</label>
+                    <select class="field-select" (change)="onDriverChange(prediction.weeklyPredictionId, $event)"
+                        [value]="form.driverId ?? ''">
+                        <option value="">Choose a driver...</option>
+                        @for (driver of predictionsService.drivers(); track driver.id) {
+                        <option [value]="driver.id">#{{ driver.championshipNumber }} {{ driver.firstName }} {{
+                            driver.lastName }} ({{ driver.teamName }})</option>
+                        }
+                    </select>
+                </div>
+                }
+
+                <!-- Team Selector -->
+                @if (form.targetType === 'Team') {
+                <div class="input-group">
+                    <label class="field-label">Select Team</label>
+                    <select class="field-select" (change)="onTeamChange(prediction.weeklyPredictionId, $event)"
+                        [value]="form.teamId ?? ''">
+                        <option value="">Choose a team...</option>
+                        @for (team of predictionsService.teams(); track team.id) {
+                        <option [value]="team.id">{{ team.displayName }}</option>
+                        }
+                    </select>
+                </div>
+                }
+
+                <!-- Text Input -->
+                @if (form.targetType === 'Text') {
+                <div class="input-group">
+                    <label class="field-label">Your Prediction</label>
+                    <textarea class="field-textarea" [value]="form.text"
+                        (input)="onTextChange(prediction.weeklyPredictionId, $event)"
+                        placeholder="Type your prediction..." maxlength="500" rows="2"></textarea>
+                </div>
+                }
+
+                <!-- Success Message -->
+                @if (form.success) {
+                <div class="alert alert-success compact">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <span>{{ form.success }}</span>
+                </div>
+                }
+
+                <!-- Error Message -->
+                @if (form.error) {
+                <div class="alert alert-error compact">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <span>{{ form.error }}</span>
+                </div>
+                }
+
+                <!-- Submit Button -->
+                <button class="submit-btn" (click)="submitPrediction(prediction.weeklyPredictionId)"
+                    [disabled]="!isFormValid(prediction.weeklyPredictionId) || form.saving">
+                    @if (form.saving) {
+                    <div class="loading-spinner small"></div>
+                    Saving...
+                    } @else if (hasPick(prediction)) {
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Update Prediction
+                    } @else {
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save Prediction
+                    }
+                </button>
+            </div>
+            }
+            }
+            }
+        </div>
+        }
+    </div>
+    }
+
+    <!-- No Predictions State -->
+    @if (selectedRaceId() && !predictionsService.isLoading() && predictionsService.predictions().length === 0) {
+    <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <h2>No Predictions Available</h2>
+        <p>No predictions have been set up for this race yet.</p>
+    </div>
+    }
+
+    <!-- No Race Selected -->
+    @if (!selectedRaceId() && !predictionsService.isLoading()) {
+    <div class="empty-state">
+        <div class="empty-icon">🏁</div>
+        <h2>Select a Race</h2>
+        <p>Choose a race above to {{ isViewingSelf() ? 'submit your' : 'view' }} predictions</p>
+    </div>
+    }
+    }
+
+    <!-- No League Selected -->
+    @if (!selectedLeagueId() && !predictionsService.isLoading()) {
+    <div class="empty-state">
+        <div class="empty-icon">🏆</div>
+        <h2>Select a League</h2>
+        <p>Choose a league above to get started</p>
+    </div>
+    }
+    }
 </div>

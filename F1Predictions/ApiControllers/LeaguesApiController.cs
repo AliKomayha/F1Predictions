@@ -18,9 +18,9 @@ namespace F1Predictions.ApiControllers
             _leaguesService = leaguesService;
         }
 
-        /// <summary>
+
         /// Gets all leagues that the current user is a member of.
-        /// </summary>
+
         [HttpGet]
         public async Task<ActionResult<List<LeagueDto>>> GetUserLeagues()
         {
@@ -33,9 +33,9 @@ namespace F1Predictions.ApiControllers
             return Ok(result.Data);
         }
 
-        /// <summary>
+        
         /// Creates a new league. The current user becomes the owner and is automatically added as a member.
-        /// </summary>
+        
         [HttpPost("create")]
         public async Task<ActionResult<LeagueDto>> CreateLeague([FromBody] CreateLeagueDto dto)
         {
@@ -51,9 +51,9 @@ namespace F1Predictions.ApiControllers
             return CreatedAtAction(nameof(GetUserLeagues), result.Data);
         }
 
-        /// <summary>
+    
         /// Joins a league using an invite code.
-        /// </summary>
+    
         [HttpPost("join")]
         public async Task<ActionResult> JoinLeague([FromBody] JoinLeagueDto dto)
         {
@@ -68,5 +68,19 @@ namespace F1Predictions.ApiControllers
 
             return Ok(new { message = result.Message });
         }
+
+        [HttpGet("league-members/{leagueId}")]
+        public async Task<ActionResult<List<LeagueMemberDto>>> GetLeagueMembers(int leagueId)
+        {
+            int userId = User.GetUserId();
+            var result = await _leaguesService.GetLeagueMembers(userId, leagueId);
+
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            return Ok(result.Data);
+        }
+
+
     }
 }

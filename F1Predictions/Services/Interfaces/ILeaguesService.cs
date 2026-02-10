@@ -19,5 +19,7 @@ namespace F1Predictions.Services.Interfaces
         /// Joins a user to a league using an invite code.
         /// </summary>
         Task<ServiceResult<bool>> JoinLeagueByCodeAsync(string inviteCode, int userId);
+
+        Task<ServiceResult<List<LeagueMemberDto>>> GetLeagueMembers(int userId, int leagueId);
     }
 }
