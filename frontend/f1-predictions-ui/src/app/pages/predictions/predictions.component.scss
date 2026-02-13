@@ -783,6 +783,33 @@
     }
 }
 
+// === CURRENT SELECTION DISPLAY ===
+.current-selection {
+    padding: 14px 16px;
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    border-radius: 12px;
+    margin-bottom: 14px;
+
+    .current-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: rgba(34, 197, 94, 0.8);
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 8px;
+    }
+
+    .current-value {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #fff;
+    }
+}
+
 // === FORM FIELDS ===
 .field-label {
     display: block;

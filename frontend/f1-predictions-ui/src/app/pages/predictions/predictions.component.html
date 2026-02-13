@@ -303,6 +303,25 @@
                 </div>
                 }
 
+                <!-- Current Selection Display -->
+                @if (hasPick(prediction)) {
+                <div class="current-selection">
+                    <div class="current-label">Current Selection:</div>
+                    <div class="current-value">
+                        @if (prediction.userPick?.targetType === 'Driver') {
+                        <span class="pick-type-tag driver">Driver</span>
+                        <span>{{ getDriverNameById(prediction.userPick?.driverId) || 'Not selected' }}</span>
+                        } @else if (prediction.userPick?.targetType === 'Team') {
+                        <span class="pick-type-tag team">Team</span>
+                        <span>{{ getTeamNameById(prediction.userPick?.teamId) || 'Not selected' }}</span>
+                        } @else if (prediction.userPick?.targetType === 'Text') {
+                        <span class="pick-type-tag text">Text</span>
+                        <span>{{ prediction.userPick?.text || '' }}</span>
+                        }
+                    </div>
+                </div>
+                }
+
                 <!-- Driver Selector -->
                 @if (form.targetType === 'Driver') {
                 <div class="input-group">

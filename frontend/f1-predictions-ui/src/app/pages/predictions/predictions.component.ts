@@ -352,6 +352,18 @@ export class PredictionsComponent implements OnInit {
         return `Locks in ${hours}h ${minutes}m`;
     }
 
+    getDriverNameById(driverId: number | null | undefined): string {
+        if (!driverId) return '';
+        const driver = this.predictionsService.drivers().find(d => d.id === driverId);
+        return driver ? `#${driver.championshipNumber} ${driver.firstName} ${driver.lastName}` : '';
+    }
+
+    getTeamNameById(teamId: number | null | undefined): string {
+        if (!teamId) return '';
+        const team = this.predictionsService.teams().find(t => t.id === teamId);
+        return team ? team.displayName : '';
+    }
+
     hasPick(prediction: RacePrediction): boolean {
         return !!prediction.userPick;
     }
