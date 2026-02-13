@@ -67,6 +67,9 @@ builder.Services.AddScoped<WeeklyPredictionsService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ILeaguesService, LeaguesService>();
 builder.Services.AddScoped<IPredictionsService, PredictionsService>();
+builder.Services.AddScoped<IPointsService, PointsService>();
+builder.Services.AddScoped<IVotingService, VotingService>();
+builder.Services.AddHostedService<VotingFinalizerService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(
