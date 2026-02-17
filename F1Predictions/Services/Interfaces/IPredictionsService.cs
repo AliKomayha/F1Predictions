@@ -34,5 +34,20 @@ namespace F1Predictions.Services.Interfaces
         /// Gets a specific member's predictions for a race (read-only view).
         /// </summary>
         Task<ServiceResult<List<RacePredictionDto>>> GetMemberPredictions(int raceId, int leagueId, int targetUserId, int requestingUserId);
+
+        /// <summary>
+        /// Gets the current/upcoming race for a league with navigation info.
+        /// </summary>
+        Task<ServiceResult<CurrentRaceDto>> GetCurrentRace(int leagueId, int? raceId);
+
+        /// <summary>
+        /// Gets league hub summary: points, standings, voting status.
+        /// </summary>
+        Task<ServiceResult<LeagueSummaryDto>> GetLeagueSummary(int leagueId, int raceId, int userId);
+
+        /// <summary>
+        /// Gets a member's predictions with points, votes, and visibility enforcement.
+        /// </summary>
+        Task<ServiceResult<List<MemberPredictionDto>>> GetMemberPredictionsEnhanced(int raceId, int leagueId, int targetUserId, int requestingUserId);
     }
 }

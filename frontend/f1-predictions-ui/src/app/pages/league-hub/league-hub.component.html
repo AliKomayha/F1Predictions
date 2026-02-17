@@ -1,0 +1,400 @@
+<div class="hub-page">
+    <!-- Back Nav -->
+    <div class="back-nav" (click)="viewMode() === 'hub' ? goBack() : backToHub()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        <span>{{ viewMode() === 'hub' ? 'All Leagues' : 'Back to Hub' }}</span>
+    </div>
+
+    @if (hubService.isLoading()) {
+    <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <span>Loading...</span>
+    </div>
+    } @else if (hubService.summary()) {
+    <!-- ========================== -->
+    <!-- HUB VIEW                   -->
+    <!-- ========================== -->
+    @if (viewMode() === 'hub') {
+    @let s = hubService.summary()!;
+    <div class="hub-view">
+
+        <!-- Race Header with Navigation -->
+        <div class="race-header">
+            <button class="nav-arrow" [disabled]="s.currentRace.roundNumber <= 1" (click)="goToPreviousRace()">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+
+            <div class="race-info">
+                <div class="race-round">Round {{ s.currentRace.roundNumber }} / {{ s.currentRace.totalRounds }}</div>
+                <h2 class="race-name">{{ s.currentRace.raceName }}</h2>
+                <div class="race-meta">
+                    <span class="track-name">📍 {{ s.currentRace.trackName }}</span>
+                    <span class="race-date">📅 {{ s.currentRace.raceDate | date:'mediumDate' }}</span>
+                </div>
+                <div class="race-state" [ngClass]="getRaceStateClass()">
+                    {{ getRaceStateLabel() }}
+                    @if (!s.currentRace.arePredictionsLocked) {
+                    <span class="countdown">• Locks in {{ getTimeUntilLock() }}</span>
+                    }
+                </div>
+            </div>
+
+            <button class="nav-arrow" [disabled]="s.currentRace.roundNumber >= s.currentRace.totalRounds"
+                (click)="goToNextRace()">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Points Cards -->
+        <div class="points-row">
+            <div class="points-card">
+                <span class="points-value">{{ s.userTotalPoints }}</span>
+                <span class="points-label">Total Points</span>
+            </div>
+            <div class="points-card">
+                <span class="points-value">{{ s.userRacePoints }}</span>
+                <span class="points-label">Race Points</span>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="btn-action btn-view" (click)="showMyPredictions()">
+                <span class="btn-icon-emoji">📋</span>
+                My Predictions
+            </button>
+            @if (!s.currentRace.arePredictionsLocked) {
+            <button class="btn-action btn-make" (click)="showMakePrediction()">
+                <span class="btn-icon-emoji">✏️</span>
+                Make Predictions
+            </button>
+            }
+        </div>
+
+        <!-- Member Standings -->
+        <div class="standings-section">
+            <h3 class="section-title">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                League Standings
+            </h3>
+
+            <div class="standings-list">
+                @for (member of s.members; track member.userId) {
+                <div class="standing-row" [class.self]="isSelf(member)" (click)="showMemberPredictions(member)">
+                    <div class="standing-rank">
+                        @if (member.rank === 1) { <span class="medal">🥇</span> }
+                        @else if (member.rank === 2) { <span class="medal">🥈</span> }
+                        @else if (member.rank === 3) { <span class="medal">🥉</span> }
+                        @else { <span class="rank-num">#{{ member.rank }}</span> }
+                    </div>
+                    <div class="standing-avatar" [class.has-undone]="member.hasUndoneVotes">
+                        {{ getMemberInitials(member) }}
+                        @if (member.hasUndoneVotes) {
+                        <div class="vote-dot" title="Has unvoted predictions"></div>
+                        }
+                    </div>
+                    <div class="standing-info">
+                        <span class="standing-name">{{ member.firstName }} {{ member.lastName }}</span>
+                        @if (isSelf(member)) { <span class="you-badge">YOU</span> }
+                    </div>
+                    <div class="standing-points">{{ member.totalPoints }} pts</div>
+                    <svg class="standing-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- ========================== -->
+    <!-- MY PREDICTIONS VIEW        -->
+    <!-- ========================== -->
+    @if (viewMode() === 'myPredictions') {
+    <div class="predictions-view">
+        <h2 class="view-title">📋 My Predictions</h2>
+        <p class="view-subtitle">{{ hubService.currentRace()?.raceName }}</p>
+
+        <div class="predictions-list">
+            @for (pred of hubService.memberPredictions(); track pred.weeklyPredictionId) {
+            <div class="prediction-card" [ngClass]="getPointsStatusClass(pred.pointsStatus)">
+                <div class="pred-header">
+                    <span class="pred-icon">{{ getPredictionIcon(pred.predictionType) }}</span>
+                    <span class="pred-type">{{ pred.adminDefinedText || pred.predictionType }}</span>
+                    <span class="pred-status-badge" [ngClass]="getPointsStatusClass(pred.pointsStatus)">
+                        {{ getPointsStatusIcon(pred.pointsStatus) }}
+                        @if (pred.pointsAwarded !== null && pred.pointsAwarded !== undefined) {
+                        {{ pred.pointsAwarded }} pts
+                        } @else {
+                        {{ pred.pointsStatus }}
+                        }
+                    </span>
+                </div>
+
+                @if (pred.userPick) {
+                <div class="pred-pick">
+                    @if (pred.userPick.driverName) {
+                    <span class="pick-value">🏎️ {{ pred.userPick.driverName }}</span>
+                    } @else if (pred.userPick.teamName) {
+                    <span class="pick-value">🏁 {{ pred.userPick.teamName }}</span>
+                    } @else if (pred.userPick.text) {
+                    <span class="pick-value pick-text">💬 {{ pred.userPick.text }}</span>
+                    }
+                </div>
+
+                @if (pred.isVotable && (pred.yesVotes > 0 || pred.noVotes > 0)) {
+                <div class="vote-bar-section">
+                    <div class="vote-bar">
+                        <div class="vote-yes"
+                            [style.width.%]="pred.yesVotes + pred.noVotes > 0 ? (pred.yesVotes / (pred.yesVotes + pred.noVotes)) * 100 : 50">
+                        </div>
+                    </div>
+                    <div class="vote-counts">
+                        <span class="yes-count">👍 {{ pred.yesVotes }}</span>
+                        <span class="no-count">👎 {{ pred.noVotes }}</span>
+                    </div>
+                </div>
+                }
+                } @else {
+                <div class="pred-empty">No prediction made</div>
+                }
+            </div>
+            }
+        </div>
+    </div>
+    }
+
+    <!-- ========================== -->
+    <!-- MAKE PREDICTION VIEW       -->
+    <!-- ========================== -->
+    @if (viewMode() === 'makePrediction') {
+    <div class="prediction-form-view">
+        <h2 class="view-title">✏️ Make Predictions</h2>
+        <p class="view-subtitle">{{ hubService.currentRace()?.raceName }}</p>
+
+        <div class="form-cards">
+            @for (pred of predictionsService.predictions(); track pred.weeklyPredictionId) {
+            <div class="form-card">
+                <div class="form-card-header">
+                    <span class="pred-icon">{{ getPredictionIcon(pred.predictionType) }}</span>
+                    <span class="pred-type">{{ pred.adminDefinedText || pred.predictionType }}</span>
+                    @if (pred.userPick) {
+                    <span class="has-pick-badge">✓ Saved</span>
+                    }
+                </div>
+
+                @let form = getForm(pred.weeklyPredictionId);
+                @if (form) {
+                <div class="form-card-body">
+                    <!-- Target Type Selector -->
+                    <div class="type-selector">
+                        @for (type of getAllowedTypes(pred); track type) {
+                        <button class="type-btn" [class.active]="form.targetType === type"
+                            (click)="onTargetTypeChange(pred.weeklyPredictionId, type)">
+                            @if (type === 'Driver') { 🏎️ }
+                            @else if (type === 'Team') { 🏁 }
+                            @else { 💬 }
+                            {{ type }}
+                        </button>
+                        }
+                    </div>
+
+                    <!-- Driver Select -->
+                    @if (form.targetType === 'Driver') {
+                    <select class="form-select" [value]="form.driverId ?? ''"
+                        (change)="onDriverChange(pred.weeklyPredictionId, $event)">
+                        <option value="">Select a driver...</option>
+                        @for (d of drivers(); track d.id) {
+                        <option [value]="d.id">{{ d.firstName }} {{ d.lastName }} ({{ d.teamName }})</option>
+                        }
+                    </select>
+                    }
+
+                    <!-- Team Select -->
+                    @if (form.targetType === 'Team') {
+                    <select class="form-select" [value]="form.teamId ?? ''"
+                        (change)="onTeamChange(pred.weeklyPredictionId, $event)">
+                        <option value="">Select a team...</option>
+                        @for (t of teams(); track t.id) {
+                        <option [value]="t.id">{{ t.displayName }}</option>
+                        }
+                    </select>
+                    }
+
+                    <!-- Text Input -->
+                    @if (form.targetType === 'Text') {
+                    <input class="form-input" type="text" placeholder="Type your prediction..."
+                        [value]="form.text ?? ''" (input)="onTextChange(pred.weeklyPredictionId, $event)">
+                    }
+
+                    <!-- Submit -->
+                    <div class="form-actions">
+                        <button class="btn-save" [disabled]="!isFormValid(pred.weeklyPredictionId) || form.saving"
+                            (click)="submitPrediction(pred.weeklyPredictionId)">
+                            @if (form.saving) {
+                            <div class="loading-spinner small"></div>
+                            } @else {
+                            Save
+                            }
+                        </button>
+                        @if (form.success) {
+                        <span class="save-feedback success">{{ form.success }}</span>
+                        }
+                        @if (form.error) {
+                        <span class="save-feedback error">{{ form.error }}</span>
+                        }
+                    </div>
+                </div>
+                }
+            </div>
+            }
+        </div>
+    </div>
+    }
+
+    <!-- ========================== -->
+    <!-- MEMBER VIEW                -->
+    <!-- ========================== -->
+    @if (viewMode() === 'memberView' && selectedMember()) {
+    <div class="member-view">
+        <div class="member-header">
+            <div class="member-avatar-large">{{ getMemberInitials(selectedMember()!) }}</div>
+            <h2 class="view-title">{{ selectedMember()!.firstName }} {{ selectedMember()!.lastName }}</h2>
+            <p class="view-subtitle">{{ hubService.currentRace()?.raceName }}</p>
+        </div>
+
+        @if (hubService.error()) {
+        <div class="alert-info">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {{ hubService.error() }}
+        </div>
+        } @else {
+        <div class="predictions-list">
+            @for (pred of hubService.memberPredictions(); track pred.weeklyPredictionId) {
+            <div class="prediction-card" [ngClass]="getPointsStatusClass(pred.pointsStatus)">
+                <div class="pred-header">
+                    <span class="pred-icon">{{ getPredictionIcon(pred.predictionType) }}</span>
+                    <span class="pred-type">{{ pred.adminDefinedText || pred.predictionType }}</span>
+                    <span class="pred-status-badge" [ngClass]="getPointsStatusClass(pred.pointsStatus)">
+                        {{ getPointsStatusIcon(pred.pointsStatus) }}
+                        @if (pred.pointsAwarded !== null && pred.pointsAwarded !== undefined) {
+                        {{ pred.pointsAwarded }} pts
+                        } @else {
+                        {{ pred.pointsStatus }}
+                        }
+                    </span>
+                </div>
+
+                @if (pred.userPick) {
+                <div class="pred-pick">
+                    @if (pred.userPick.driverName) {
+                    <span class="pick-value">🏎️ {{ pred.userPick.driverName }}</span>
+                    } @else if (pred.userPick.teamName) {
+                    <span class="pick-value">🏁 {{ pred.userPick.teamName }}</span>
+                    } @else if (pred.userPick.text) {
+                    <span class="pick-value pick-text">💬 {{ pred.userPick.text }}</span>
+                    }
+                </div>
+
+                <!-- Voting UI -->
+                @if (pred.isVotable && !isSelf(selectedMember()!) && hubService.currentRace()?.isVotingOpen) {
+                <div class="voting-section">
+                    @if (pred.myVote !== null && pred.myVote !== undefined) {
+                    <div class="voted-label">
+                        You voted: {{ pred.myVote ? '👍 Yes' : '👎 No' }}
+                    </div>
+                    } @else {
+                    <div class="vote-buttons">
+                        <button class="vote-btn vote-yes-btn" (click)="castVote(pred.userPick!.id, true)">
+                            👍 Yes
+                        </button>
+                        <button class="vote-btn vote-no-btn" (click)="castVote(pred.userPick!.id, false)">
+                            👎 No
+                        </button>
+                    </div>
+                    }
+
+                    @if (getVoteFeedback(pred.userPick!.id)) {
+                    <span class="vote-feedback">{{ getVoteFeedback(pred.userPick!.id) }}</span>
+                    }
+
+                    <!-- Report Button -->
+                    <button class="report-btn" (click)="openReportModal(pred.userPick!.id)">
+                        ⚠️ Report
+                    </button>
+                </div>
+                }
+
+                <!-- Vote Progress -->
+                @if (pred.isVotable && (pred.yesVotes > 0 || pred.noVotes > 0)) {
+                <div class="vote-bar-section">
+                    <div class="vote-bar">
+                        <div class="vote-yes"
+                            [style.width.%]="pred.yesVotes + pred.noVotes > 0 ? (pred.yesVotes / (pred.yesVotes + pred.noVotes)) * 100 : 50">
+                        </div>
+                    </div>
+                    <div class="vote-counts">
+                        <span class="yes-count">👍 {{ pred.yesVotes }}</span>
+                        <span class="no-count">👎 {{ pred.noVotes }}</span>
+                    </div>
+                </div>
+                }
+                } @else {
+                <div class="pred-empty">No prediction made</div>
+                }
+            </div>
+            }
+        </div>
+        }
+    </div>
+    }
+    }
+
+    <!-- Report Modal -->
+    @if (showReportModal()) {
+    <div class="modal-overlay" (click)="closeReportModal()">
+        <div class="modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h2>⚠️ Report Prediction</h2>
+                <button class="close-btn" (click)="closeReportModal()">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-form">
+                <div class="input-group">
+                    <label>Reason for reporting</label>
+                    <textarea placeholder="Explain why you think this prediction should be reviewed..."
+                        [ngModel]="reportReason()" (ngModelChange)="reportReason.set($event)" rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" (click)="closeReportModal()">Cancel</button>
+                    <button class="btn-primary" [disabled]="!reportReason() || reportSubmitting()"
+                        (click)="submitReport()">
+                        @if (reportSubmitting()) {
+                        <div class="loading-spinner small"></div>
+                        } @else {
+                        Submit Report
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+</div>

@@ -31,6 +31,7 @@ namespace F1Predictions.Data
         public DbSet<PredictionVoteWindow> PredictionVoteWindows { get; set; }
         public DbSet<RaceState> RaceStates { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<AdminUser> AdminUsers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

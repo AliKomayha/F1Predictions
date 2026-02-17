@@ -3,6 +3,7 @@ import { HomeComponent } from './pages/home/home.component';
 import { ScheduleComponent } from './pages/schedule/schedule.component';
 import { ResultsComponent } from './pages/results/results.component';
 import { PredictionsComponent } from './pages/predictions/predictions.component';
+import { LeagueHubComponent } from './pages/league-hub/league-hub.component';
 import { MoreComponent } from './pages/more/more.component';
 import { LoginComponent } from './pages/login/login.component';
 import { SignupComponent } from './pages/signup/signup.component';
@@ -13,6 +14,7 @@ export const routes: Routes = [
     { path: 'schedule', component: ScheduleComponent },
     { path: 'results', component: ResultsComponent },
     { path: 'predictions', component: PredictionsComponent },
+    { path: 'predictions/league/:leagueId', component: LeagueHubComponent },
     { path: 'leagues', component: LeaguesComponent },
     { path: 'more', component: MoreComponent },
     { path: 'login', component: LoginComponent },

@@ -1,6 +1,7 @@
 using F1Predictions.Data;
 using F1Predictions.Services;
 using F1Predictions.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -21,15 +22,25 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins("http://localhost:4200"
+                           
+                            )
+
               .AllowCredentials()
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
 
+//builder.Services.AddCors(options =>
+//{
+//    options.AddPolicy("AllowAll", policy =>
+//        policy.AllowAnyOrigin()
+//              .AllowAnyHeader()
+//              .AllowAnyMethod());
+//});
 
 
-// Configure JWT Authentication
+// Configure JWT Authentication (default for API controllers)
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -52,6 +63,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 return Task.CompletedTask;
             }
         };
+    })
+    // Cookie authentication for Admin MVC dashboard
+    .AddCookie("AdminCookieAuth", options =>
+    {
+        options.LoginPath = "/AdminAuth/Login";
+        options.LogoutPath = "/AdminAuth/Logout";
+        options.Cookie.Name = "AdminAuth";
+        options.Cookie.HttpOnly = true;
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
     });
 
 builder.Services.AddScoped<DriversService>();
@@ -70,6 +91,7 @@ builder.Services.AddScoped<IPredictionsService, PredictionsService>();
 builder.Services.AddScoped<IPointsService, PointsService>();
 builder.Services.AddScoped<IVotingService, VotingService>();
 builder.Services.AddHostedService<VotingFinalizerService>();
+builder.Services.AddScoped<AdminAuthService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(

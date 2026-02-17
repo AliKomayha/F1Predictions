@@ -107,5 +107,51 @@ namespace F1Predictions.ApiControllers
 
             return Ok(result.Data);
         }
+
+        // ---- League Hub Endpoints ----
+
+        /// <summary>
+        /// Gets the current/upcoming race for a league. Use raceId query param to navigate to a specific race.
+        /// </summary>
+        [HttpGet("current-race/{leagueId}")]
+        public async Task<ActionResult<CurrentRaceDto>> GetCurrentRace(int leagueId, [FromQuery] int? raceId = null)
+        {
+            var result = await _predictionsService.GetCurrentRace(leagueId, raceId);
+
+            if (!result.Success)
+                return BadRequest(new { message = result.Message });
+
+            return Ok(result.Data);
+        }
+
+        /// <summary>
+        /// Gets the league hub summary: points, member standings, and voting status.
+        /// </summary>
+        [HttpGet("league-summary/{leagueId}/{raceId}")]
+        public async Task<ActionResult<LeagueSummaryDto>> GetLeagueSummary(int leagueId, int raceId)
+        {
+            int userId = User.GetUserId();
+            var result = await _predictionsService.GetLeagueSummary(leagueId, raceId, userId);
+
+            if (!result.Success)
+                return BadRequest(new { message = result.Message });
+
+            return Ok(result.Data);
+        }
+
+        /// <summary>
+        /// Gets a member's predictions with points, votes, and visibility enforcement.
+        /// </summary>
+        [HttpGet("member-predictions/{targetUserId}/{raceId}/{leagueId}")]
+        public async Task<ActionResult<List<MemberPredictionDto>>> GetMemberPredictionsEnhanced(int targetUserId, int raceId, int leagueId)
+        {
+            int requestingUserId = User.GetUserId();
+            var result = await _predictionsService.GetMemberPredictionsEnhanced(raceId, leagueId, targetUserId, requestingUserId);
+
+            if (!result.Success)
+                return BadRequest(new { message = result.Message });
+
+            return Ok(result.Data);
+        }
     }
 }
