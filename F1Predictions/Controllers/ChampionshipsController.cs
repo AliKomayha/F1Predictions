@@ -1,9 +1,11 @@
 ﻿using F1Predictions.Models;
 using F1Predictions.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace F1Predictions.Controllers
 {
+    [Authorize(AuthenticationSchemes = "AdminCookieAuth")]
     public class ChampionshipsController : Controller
     {
         private readonly ChampionshipsService _championshipsService;

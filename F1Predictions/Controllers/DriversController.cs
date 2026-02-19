@@ -1,10 +1,12 @@
 ﻿using F1Predictions.Models;
 using F1Predictions.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace F1Predictions.Controllers
 {
+    [Authorize(AuthenticationSchemes = "AdminCookieAuth")]
     public class DriversController : Controller
     {
         private readonly DriversService _driversService;

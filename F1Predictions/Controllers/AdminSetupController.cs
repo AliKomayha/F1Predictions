@@ -1,9 +1,11 @@
 using F1Predictions.Models.DTOs;
 using F1Predictions.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace F1Predictions.Controllers
 {
+    [Authorize(AuthenticationSchemes = "AdminCookieAuth")]
     public class AdminSetupController : Controller
     {
         private readonly AdminAuthService _adminAuthService;

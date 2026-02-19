@@ -1,0 +1,117 @@
+@using F1Predictions.Models
+@{
+    ViewData["Title"] = "Race Management";
+
+    var races = ViewBag.Races as List<Race> ?? new List<Race>();
+    var raceStates = ViewBag.RaceStates as Dictionary<int, string> ?? new Dictionary<int, string>();
+}
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a asp-action="Index" class="text-decoration-none text-muted">
+                <i class="bi bi-arrow-left me-1"></i>Back to Admin Actions
+            </a>
+            <h2 class="mt-2 mb-0"><i class="bi bi-flag-fill me-2"></i>Race Management</h2>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Round</th>
+                            <th>Race</th>
+                            <th>Date</th>
+                            <th>State</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var race in races)
+                        {
+                            var state = raceStates.ContainsKey(race.Id) ? raceStates[race.Id] : "—";
+                            var badgeClass = state switch
+                            {
+                                "PredictionsOpen" => "bg-info",
+                                "PredictionsLocked" => "bg-secondary",
+                                "VotingOpen" => "bg-success",
+                                "VotingClosed" => "bg-warning text-dark",
+                                "RaceCompleted" => "bg-primary",
+                                "Finalized" => "bg-dark",
+                                _ => "bg-light text-dark"
+                            };
+
+                            <tr>
+                                <td><strong>R@(race.RoundNumber)</strong></td>
+                                <td>
+                                    @race.RaceName
+                                    <br /><small class="text-muted">@race.Track?.Name</small>
+                                </td>
+                                <td>@race.RaceDate.ToString("dd MMM yyyy")</td>
+                                <td><span class="badge @badgeClass">@state</span></td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        @if (state == "—" || state == "PredictionsLocked")
+                                        {
+                                            <form asp-action="GrantPoints" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="raceId" value="@race.Id" />
+                                                <button type="submit" class="btn btn-success btn-sm me-1"
+                                                        onclick="return confirm('Grant points for @race.RaceName? This will also open voting.')">
+                                                    <i class="bi bi-trophy me-1"></i>Grant Points
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @if (state == "VotingOpen" || state == "VotingClosed" || state == "RaceCompleted" || state == "Finalized")
+                                        {
+                                            <form asp-action="ResetAndRegrant" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="raceId" value="@race.Id" />
+                                                <button type="submit" class="btn btn-warning btn-sm me-1"
+                                                        onclick="return confirm('Reset and re-grant points for @race.RaceName? This will recalculate everything.')">
+                                                    <i class="bi bi-arrow-repeat me-1"></i>Reset & Re-grant
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @if (state == "VotingOpen")
+                                        {
+                                            <form asp-action="FinalizeVoting" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="raceId" value="@race.Id" />
+                                                <button type="submit" class="btn btn-primary btn-sm"
+                                                        onclick="return confirm('Finalize voting for @race.RaceName? Tied predictions will be flagged for admin decision.')">
+                                                    <i class="bi bi-check2-all me-1"></i>Finalize Voting
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

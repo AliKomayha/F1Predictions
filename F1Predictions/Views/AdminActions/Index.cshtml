@@ -1,261 +1,65 @@
-@using F1Predictions.Models
 @{
     ViewData["Title"] = "Admin Actions";
-
-    var races = ViewBag.Races as List<Race> ?? new List<Race>();
-    var raceStates = ViewBag.RaceStates as Dictionary<int, string> ?? new Dictionary<int, string>();
-    var tiedPredictions = ViewBag.TiedPredictions as List<UserPrediction> ?? new List<UserPrediction>();
-    var pendingReports = ViewBag.PendingReports as List<PredictionReport> ?? new List<PredictionReport>();
 }
 
-<div class="container-fluid py-4">
+<div class="container py-4">
 
-    <h2 class="mb-4"><i class="bi bi-gear-wide-connected me-2"></i>Admin Actions</h2>
-
-    @* Success / Error messages *@
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @* ============ SECTION 1: RACE MANAGEMENT ============ *@
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-dark text-white d-flex align-items-center">
-            <i class="bi bi-flag-fill me-2"></i>
-            <h5 class="mb-0">Race Management</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Round</th>
-                            <th>Race</th>
-                            <th>Date</th>
-                            <th>State</th>
-                            <th class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var race in races)
-                        {
-                            var state = raceStates.ContainsKey(race.Id) ? raceStates[race.Id] : "—";
-                            var badgeClass = state switch
-                            {
-                                "PredictionsOpen" => "bg-info",
-                                "PredictionsLocked" => "bg-secondary",
-                                "VotingOpen" => "bg-success",
-                                "VotingClosed" => "bg-warning text-dark",
-                                "RaceCompleted" => "bg-primary",
-                                "Finalized" => "bg-dark",
-                                _ => "bg-light text-dark"
-                            };
-
-                            <tr>
-                                <td><strong>R@(race.RoundNumber)</strong></td>
-                                <td>
-                                    @race.RaceName
-                                    <br /><small class="text-muted">@race.Track?.Name</small>
-                                </td>
-                                <td>@race.RaceDate.ToString("dd MMM yyyy")</td>
-                                <td><span class="badge @badgeClass">@state</span></td>
-                                <td class="text-end">
-                                    <div class="btn-group btn-group-sm">
-                                        @* Grant Points: available when no state or PredictionsLocked *@
-                                        @if (state == "—" || state == "PredictionsLocked")
-                                        {
-                                            <form asp-action="GrantPoints" method="post" class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="raceId" value="@race.Id" />
-                                                <button type="submit" class="btn btn-success btn-sm me-1"
-                                                        onclick="return confirm('Grant points for @race.RaceName? This will also open voting.')">
-                                                    <i class="bi bi-trophy me-1"></i>Grant Points
-                                                </button>
-                                            </form>
-                                        }
-
-                                        @* Reset & Re-grant: available when points have been granted *@
-                                        @if (state == "VotingOpen" || state == "VotingClosed" || state == "RaceCompleted" || state == "Finalized")
-                                        {
-                                            <form asp-action="ResetAndRegrant" method="post" class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="raceId" value="@race.Id" />
-                                                <button type="submit" class="btn btn-warning btn-sm me-1"
-                                                        onclick="return confirm('Reset and re-grant points for @race.RaceName? This will recalculate everything.')">
-                                                    <i class="bi bi-arrow-repeat me-1"></i>Reset & Re-grant
-                                                </button>
-                                            </form>
-                                        }
-
-                                        @* Finalize Voting: available when voting is open *@
-                                        @if (state == "VotingOpen")
-                                        {
-                                            <form asp-action="FinalizeVoting" method="post" class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="raceId" value="@race.Id" />
-                                                <button type="submit" class="btn btn-primary btn-sm"
-                                                        onclick="return confirm('Finalize voting for @race.RaceName? Tied predictions will be flagged for admin decision.')">
-                                                    <i class="bi bi-check2-all me-1"></i>Finalize Voting
-                                                </button>
-                                            </form>
-                                        }
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="bi bi-gear-wide-connected me-2"></i>Admin Actions</h2>
+        <form asp-controller="AdminAuth" asp-action="Logout" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-box-arrow-right me-1"></i>Logout
+            </button>
+        </form>
     </div>
 
-    <div class="row">
-        @* ============ SECTION 2: TIED PREDICTIONS ============ *@
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="bi bi-question-circle-fill me-2"></i>
-                        <strong>Tied Predictions</strong>
-                    </div>
-                    <span class="badge bg-dark">@tiedPredictions.Count</span>
-                </div>
-                <div class="card-body">
-                    @if (!tiedPredictions.Any())
-                    {
-                        <div class="text-center text-muted py-4">
-                            <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
-                            <p class="mt-2 mb-0">No tied predictions to resolve</p>
+    <div class="row g-4">
+
+        @* Race Management *@
+        <div class="col-md-4">
+            <a asp-action="RaceManagement" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-0" style="transition: transform 0.15s; cursor:pointer;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='none'">
+                    <div class="card-body text-center py-5">
+                        <div class="bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:64px;height:64px;">
+                            <i class="bi bi-flag-fill fs-3"></i>
                         </div>
-                    }
-                    else
-                    {
-                        @foreach (var pred in tiedPredictions)
-                        {
-                            var yesVotes = pred.Votes.Count(v => v.Vote);
-                            var noVotes = pred.Votes.Count(v => !v.Vote);
-                            var predContent = pred.TargetType switch
-                            {
-                                "Driver" => pred.Driver != null ? $"{pred.Driver.FirstName} {pred.Driver.LastName}" : "Unknown",
-                                "Team" => pred.Team?.DisplayName ?? "Unknown",
-                                _ => pred.Text ?? "—"
-                            };
-
-                            <div class="border rounded p-3 mb-3">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div>
-                                        <span class="badge bg-secondary me-1">@pred.WeeklyPrediction.PredictionType</span>
-                                        <span class="badge bg-info">@pred.TargetType</span>
-                                    </div>
-                                    <small class="text-muted">
-                                        <i class="bi bi-hand-thumbs-up-fill text-success"></i> @yesVotes
-                                        <i class="bi bi-hand-thumbs-down-fill text-danger ms-2"></i> @noVotes
-                                    </small>
-                                </div>
-                                <p class="mb-1">
-                                    <strong>@($"{pred.User.FirstName} {pred.User.LastName}")</strong>
-                                    <span class="text-muted">(@pred.League.Name)</span>
-                                </p>
-                                <p class="mb-2">@predContent</p>
-
-                                <form asp-action="AdminDecide" method="post">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="userPredictionId" value="@pred.Id" />
-                                    <div class="input-group input-group-sm mb-2">
-                                        <span class="input-group-text"><i class="bi bi-chat-text"></i></span>
-                                        <input type="text" name="note" class="form-control" placeholder="Optional note..." />
-                                    </div>
-                                    <div class="btn-group btn-group-sm w-100">
-                                        <button type="submit" name="isApproved" value="true" class="btn btn-success">
-                                            <i class="bi bi-check-lg me-1"></i>Approve
-                                        </button>
-                                        <button type="submit" name="isApproved" value="false" class="btn btn-danger">
-                                            <i class="bi bi-x-lg me-1"></i>Deny
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        }
-                    }
+                        <h5 class="card-title">Race Management</h5>
+                        <p class="card-text text-muted">Grant points, reset & re-grant, finalize voting for each race.</p>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
 
-        @* ============ SECTION 3: PENDING REPORTS ============ *@
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="bi bi-flag-fill me-2"></i>
-                        <strong>Pending Reports</strong>
-                    </div>
-                    <span class="badge bg-light text-dark">@pendingReports.Count</span>
-                </div>
-                <div class="card-body">
-                    @if (!pendingReports.Any())
-                    {
-                        <div class="text-center text-muted py-4">
-                            <i class="bi bi-shield-check" style="font-size: 2rem;"></i>
-                            <p class="mt-2 mb-0">No pending reports</p>
+        @* Tied Predictions *@
+        <div class="col-md-4">
+            <a asp-action="TiedPredictions" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-0" style="transition: transform 0.15s; cursor:pointer;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='none'">
+                    <div class="card-body text-center py-5">
+                        <div class="bg-warning text-dark rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:64px;height:64px;">
+                            <i class="bi bi-question-circle-fill fs-3"></i>
                         </div>
-                    }
-                    else
-                    {
-                        @foreach (var report in pendingReports)
-                        {
-                            var reportedUser = report.UserPrediction?.User;
-                            var predType = report.UserPrediction?.WeeklyPrediction?.PredictionType ?? "—";
-
-                            <div class="border rounded p-3 mb-3">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <span class="badge bg-danger">Report #@report.Id</span>
-                                    <small class="text-muted">@report.CreatedAt.ToString("dd MMM yyyy HH:mm")</small>
-                                </div>
-                                <p class="mb-1">
-                                    <i class="bi bi-person-fill text-muted me-1"></i>
-                                    <strong>Reported by:</strong> @($"{report.Reporter.FirstName} {report.Reporter.LastName}")
-                                </p>
-                                <p class="mb-1">
-                                    <i class="bi bi-person-x-fill text-muted me-1"></i>
-                                    <strong>Prediction by:</strong>
-                                    @if (reportedUser != null)
-                                    {
-                                        @($"{reportedUser.FirstName} {reportedUser.LastName}")
-                                    }
-                                    <span class="badge bg-secondary ms-1">@predType</span>
-                                </p>
-                                <p class="mb-2">
-                                    <i class="bi bi-chat-quote-fill text-muted me-1"></i>
-                                    <em>"@report.Reason"</em>
-                                </p>
-
-                                <form asp-action="ResolveReport" method="post">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="reportId" value="@report.Id" />
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text"><i class="bi bi-chat-text"></i></span>
-                                        <input type="text" name="note" class="form-control" placeholder="Resolution note..." />
-                                        <button type="submit" class="btn btn-outline-success"
-                                                onclick="return confirm('Resolve this report?')">
-                                            <i class="bi bi-check-lg me-1"></i>Resolve
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        }
-                    }
+                        <h5 class="card-title">Tied Predictions</h5>
+                        <p class="card-text text-muted">Review and decide on predictions with tied votes.</p>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
+
+        @* Pending Reports *@
+        <div class="col-md-4">
+            <a asp-action="PendingReports" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-0" style="transition: transform 0.15s; cursor:pointer;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='none'">
+                    <div class="card-body text-center py-5">
+                        <div class="bg-danger text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:64px;height:64px;">
+                            <i class="bi bi-flag-fill fs-3"></i>
+                        </div>
+                        <h5 class="card-title">Pending Reports</h5>
+                        <p class="card-text text-muted">Review and resolve reported predictions.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
     </div>
 </div>

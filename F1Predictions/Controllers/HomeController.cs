@@ -2,12 +2,14 @@ using System.Diagnostics;
 using F1Predictions.Data;
 using F1Predictions.Models;
 using F1Predictions.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace F1Predictions.Controllers
 {
+    [Authorize(AuthenticationSchemes = "AdminCookieAuth")]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;

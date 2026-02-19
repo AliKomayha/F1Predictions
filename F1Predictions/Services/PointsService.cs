@@ -42,25 +42,166 @@ namespace F1Predictions.Services
 
         public async Task<ServiceResult<PointsGrantResultDto>> ResetAndRegrant(int raceId)
         {
-            // 1. Delete existing UserPredictionPoints for this race
-            var existingPoints = await _context.Set<UserPredictionPoints>()
+            var initialTypes = PredictionTypeMapping.Keys.ToList(); // Pole, P1, P2, P3, SprintPole, SprintWinner
+
+            // 1. Delete existing UserPredictionPoints for INITIAL prediction types only
+            var existingInitialPoints = await _context.Set<UserPredictionPoints>()
+                .Include(upp => upp.UserPrediction)
+                    .ThenInclude(up => up.WeeklyPrediction)
                 .Where(upp => upp.UserPrediction.WeeklyPrediction.RaceId == raceId
-                           && !upp.IsManuallyAssigned)
+                           && !upp.IsManuallyAssigned
+                           && initialTypes.Contains(upp.UserPrediction.WeeklyPrediction.PredictionType))
                 .ToListAsync();
 
-            _context.Set<UserPredictionPoints>().RemoveRange(existingPoints);
+            // Track how many initial points each user/league had, so we can adjust WeeklyPoints
+            var oldPointsByUserLeague = existingInitialPoints
+                .GroupBy(p => (p.UserPrediction.UserId, p.UserPrediction.LeagueId))
+                .ToDictionary(g => g.Key, g => g.Sum(p => p.PointsAwarded));
 
-            // 2. Delete existing WeeklyPoints for this race
-            var existingWeekly = await _context.Set<WeeklyPoints>()
-                .Where(wp => wp.RaceId == raceId)
-                .ToListAsync();
+            _context.Set<UserPredictionPoints>().RemoveRange(existingInitialPoints);
+            await _context.SaveChangesAsync();
 
-            _context.Set<WeeklyPoints>().RemoveRange(existingWeekly);
+            // 2. Subtract old initial points from WeeklyPoints
+            foreach (var entry in oldPointsByUserLeague)
+            {
+                var weekly = await _context.Set<WeeklyPoints>()
+                    .FirstOrDefaultAsync(wp => wp.UserId == entry.Key.UserId
+                                            && wp.LeagueId == entry.Key.LeagueId
+                                            && wp.RaceId == raceId);
+                if (weekly != null)
+                {
+                    weekly.PointsTotal -= entry.Value;
+                }
+            }
 
             await _context.SaveChangesAsync();
 
-            // 3. Recalculate
-            return await CalculateAndGrantPoints(raceId);
+            // 3. Recalculate initial points only (no voting reset, no state change)
+            return await RecalculateInitialPoints(raceId);
+        }
+
+        /// <summary>
+        /// Recalculates only position-based/initial points (Pole, P1, P2, P3, SprintPole, SprintWinner).
+        /// Does NOT touch voting, vote windows, or race state.
+        /// </summary>
+        private async Task<ServiceResult<PointsGrantResultDto>> RecalculateInitialPoints(int raceId)
+        {
+            // 1. Get all sessions for this race
+            var sessions = await _context.Sessions
+                .Where(s => s.RaceId == raceId)
+                .ToListAsync();
+
+            if (!sessions.Any())
+                return ServiceResult<PointsGrantResultDto>.Fail("No sessions found for this race.");
+
+            // 2. Build actual results map
+            var actualResults = new Dictionary<(string SessionType, int Position), int>();
+            foreach (var session in sessions)
+            {
+                var results = await _context.Set<SessionResult>()
+                    .Where(sr => sr.SessionId == session.Id && sr.Position != null)
+                    .ToListAsync();
+
+                foreach (var r in results)
+                {
+                    var key = (session.Type, r.Position!.Value);
+                    if (!actualResults.ContainsKey(key))
+                        actualResults[key] = r.DriverId;
+                }
+            }
+
+            // 3. Get initial-type predictions only
+            var eligibleTypes = PredictionTypeMapping.Keys.ToList();
+            var userPredictions = await _context.Set<UserPrediction>()
+                .Include(up => up.WeeklyPrediction)
+                .Include(up => up.User)
+                .Include(up => up.League)
+                .Include(up => up.Driver)
+                .Where(up => up.WeeklyPrediction.RaceId == raceId
+                          && up.DriverId != null
+                          && eligibleTypes.Contains(up.WeeklyPrediction.PredictionType))
+                .ToListAsync();
+
+            if (!userPredictions.Any())
+                return ServiceResult<PointsGrantResultDto>.Fail("No eligible predictions found for this race.");
+
+            // 4. Compare and award points
+            var dto = new PointsGrantResultDto
+            {
+                RaceId = raceId,
+                TotalPredictionsChecked = userPredictions.Count
+            };
+
+            var weeklyPointsTracker = new Dictionary<(int UserId, int LeagueId), int>();
+
+            foreach (var prediction in userPredictions)
+            {
+                var predType = prediction.WeeklyPrediction.PredictionType;
+                if (!PredictionTypeMapping.TryGetValue(predType, out var mapping))
+                    continue;
+
+                var actualDriverId = actualResults.GetValueOrDefault(mapping);
+                var detail = new PointDetailDto
+                {
+                    PredictionType = predType,
+                    UserName = $"{prediction.User.FirstName} {prediction.User.LastName}",
+                    LeagueName = prediction.League.Name,
+                    PredictedDriver = prediction.Driver != null
+                        ? $"{prediction.Driver.FirstName} {prediction.Driver.LastName}"
+                        : "Unknown",
+                    ActualDriver = await GetDriverName(actualDriverId),
+                    IsCorrect = actualDriverId != 0 && prediction.DriverId == actualDriverId
+                };
+                dto.Details.Add(detail);
+
+                if (detail.IsCorrect)
+                {
+                    dto.CorrectPredictions++;
+                    dto.PointsAwarded++;
+
+                    _context.Set<UserPredictionPoints>().Add(new UserPredictionPoints
+                    {
+                        UserPredictionId = prediction.Id,
+                        PointsAwarded = 1,
+                        IsManuallyAssigned = false,
+                        CreatedAt = DateTime.UtcNow
+                    });
+
+                    var weeklyKey = (prediction.UserId, prediction.LeagueId);
+                    if (!weeklyPointsTracker.ContainsKey(weeklyKey))
+                        weeklyPointsTracker[weeklyKey] = 0;
+                    weeklyPointsTracker[weeklyKey]++;
+                }
+            }
+
+            // 5. Add recalculated initial points back to WeeklyPoints
+            foreach (var entry in weeklyPointsTracker)
+            {
+                var existing = await _context.Set<WeeklyPoints>()
+                    .FirstOrDefaultAsync(wp => wp.UserId == entry.Key.UserId
+                                            && wp.LeagueId == entry.Key.LeagueId
+                                            && wp.RaceId == raceId);
+
+                if (existing != null)
+                {
+                    existing.PointsTotal += entry.Value;
+                }
+                else
+                {
+                    _context.Set<WeeklyPoints>().Add(new WeeklyPoints
+                    {
+                        UserId = entry.Key.UserId,
+                        LeagueId = entry.Key.LeagueId,
+                        RaceId = raceId,
+                        PointsTotal = entry.Value,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return ServiceResult<PointsGrantResultDto>.Succeed(dto);
         }
 
         private async Task<ServiceResult<PointsGrantResultDto>> CalculateAndGrantPoints(int raceId)

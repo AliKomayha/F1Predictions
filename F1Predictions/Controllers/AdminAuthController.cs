@@ -2,10 +2,12 @@ using System.Security.Claims;
 using F1Predictions.Models.DTOs;
 using F1Predictions.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace F1Predictions.Controllers
 {
+    [Authorize(AuthenticationSchemes = "AdminCookieAuth")]
     public class AdminAuthController : Controller
     {
         private readonly AdminAuthService _adminAuthService;
@@ -17,11 +19,11 @@ namespace F1Predictions.Controllers
         }
 
         // GET: AdminAuth/Login
+        [AllowAnonymous]
         public IActionResult Login()
         {
-            // If already logged in, redirect to home
-            if (User.Identity?.IsAuthenticated == true &&
-                User.HasClaim("AdminId", User.FindFirst("AdminId")?.Value ?? ""))
+            // If already logged in, redirect to admin actions
+            if (User.Identities.Any(i => i.AuthenticationType == "AdminCookieAuth" && i.IsAuthenticated))
             {
                 return RedirectToAction("Index", "Home");
             }
@@ -30,6 +32,7 @@ namespace F1Predictions.Controllers
         }
 
         // POST: AdminAuth/Login
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(AdminLoginDto dto)

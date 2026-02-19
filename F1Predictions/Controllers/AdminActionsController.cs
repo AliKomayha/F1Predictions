@@ -2,11 +2,13 @@ using F1Predictions.Data;
 using F1Predictions.Models;
 using F1Predictions.Models.DTOs;
 using F1Predictions.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace F1Predictions.Controllers
 {
+    [Authorize(AuthenticationSchemes = "AdminCookieAuth")]
     public class AdminActionsController : Controller
     {
         private readonly IPointsService _pointsService;
@@ -29,10 +31,15 @@ namespace F1Predictions.Controllers
             return claim != null ? int.Parse(claim.Value) : 0;
         }
 
-        // GET: AdminActions
-        public async Task<IActionResult> Index()
+        // GET: AdminActions — lightweight menu, no queries
+        public IActionResult Index()
         {
-            // 1. Load races with their states (most recent first)
+            return View();
+        }
+
+        // GET: AdminActions/RaceManagement
+        public async Task<IActionResult> RaceManagement()
+        {
             var races = await _context.Races
                 .Include(r => r.Track)
                 .Include(r => r.Championship)
@@ -42,7 +49,15 @@ namespace F1Predictions.Controllers
             var raceStates = await _context.Set<RaceState>().ToListAsync();
             var raceStateDict = raceStates.ToDictionary(rs => rs.RaceId, rs => rs.State);
 
-            // 2. Load tied predictions (votable predictions with no points entry and equal yes/no votes)
+            ViewBag.Races = races;
+            ViewBag.RaceStates = raceStateDict;
+
+            return View();
+        }
+
+        // GET: AdminActions/TiedPredictions
+        public async Task<IActionResult> TiedPredictions()
+        {
             var votableTypes = new[] { "Surprise", "Flop", "Crazy", "Custom" };
 
             var tiedPredictions = await _context.Set<UserPrediction>()
@@ -52,14 +67,12 @@ namespace F1Predictions.Controllers
                 .Include(up => up.Team)
                 .Include(up => up.League)
                 .Include(up => up.Votes)
-                .Include(up => up.Points)
-                .Include(up => up.Decisions)
                 .Where(up => votableTypes.Contains(up.WeeklyPrediction.PredictionType)
-                           && !up.Points.Any()         // Not yet resolved
-                           && !up.Decisions.Any())      // No admin decision yet
+                           && !up.Points.Any()
+                           && !up.Decisions.Any())
+                .AsSplitQuery()
                 .ToListAsync();
 
-            // Filter to only truly tied ones (yes == no and at least 1 vote)
             var tied = tiedPredictions
                 .Where(p =>
                 {
@@ -69,7 +82,13 @@ namespace F1Predictions.Controllers
                 })
                 .ToList();
 
-            // 3. Load pending reports
+            ViewBag.TiedPredictions = tied;
+            return View();
+        }
+
+        // GET: AdminActions/PendingReports
+        public async Task<IActionResult> PendingReports()
+        {
             var pendingReports = await _context.Set<PredictionReport>()
                 .Include(pr => pr.UserPrediction)
                     .ThenInclude(up => up.User)
@@ -80,11 +99,7 @@ namespace F1Predictions.Controllers
                 .OrderByDescending(pr => pr.CreatedAt)
                 .ToListAsync();
 
-            ViewBag.Races = races;
-            ViewBag.RaceStates = raceStateDict;
-            ViewBag.TiedPredictions = tied;
             ViewBag.PendingReports = pendingReports;
-
             return View();
         }
 
@@ -104,7 +119,7 @@ namespace F1Predictions.Controllers
                 TempData["ErrorMessage"] = result.Message;
             }
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(RaceManagement));
         }
 
         // POST: AdminActions/ResetAndRegrant
@@ -116,14 +131,14 @@ namespace F1Predictions.Controllers
 
             if (result.Success)
             {
-                TempData["SuccessMessage"] = $"Points reset and re-granted! {result.Data!.CorrectPredictions} correct out of {result.Data.TotalPredictionsChecked} predictions. Voting reopened.";
+                TempData["SuccessMessage"] = $"Initial points reset and re-granted! {result.Data!.CorrectPredictions} correct out of {result.Data.TotalPredictionsChecked} predictions. Voting points were preserved.";
             }
             else
             {
                 TempData["ErrorMessage"] = result.Message;
             }
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(RaceManagement));
         }
 
         // POST: AdminActions/FinalizeVoting
@@ -143,7 +158,7 @@ namespace F1Predictions.Controllers
                 TempData["ErrorMessage"] = result.Message;
             }
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(RaceManagement));
         }
 
         // POST: AdminActions/AdminDecide
@@ -171,7 +186,7 @@ namespace F1Predictions.Controllers
                 TempData["ErrorMessage"] = result.Message;
             }
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(TiedPredictions));
         }
 
         // POST: AdminActions/ResolveReport
@@ -198,7 +213,7 @@ namespace F1Predictions.Controllers
                 TempData["ErrorMessage"] = result.Message;
             }
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(PendingReports));
         }
     }
 }

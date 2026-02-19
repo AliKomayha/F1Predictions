@@ -1,10 +1,12 @@
 using F1Predictions.Models;
 using F1Predictions.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace F1Predictions.Controllers
 {
+    [Authorize(AuthenticationSchemes = "AdminCookieAuth")]
     public class PointsSystemController : Controller
     {
         private readonly PointsSystemService _pointsSystemService;
