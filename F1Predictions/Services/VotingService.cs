@@ -91,7 +91,8 @@ namespace F1Predictions.Services
                     MyVote = myVote?.Vote,
                     IsResolved = pointsEntry != null,
                     WasApproved = decision?.IsApproved ?? (pointsEntry != null ? pointsEntry.PointsAwarded > 0 : null),
-                    PointsValue = GetPointsValue(pred.TargetType)
+                    PointsValue = GetPointsValue(pred.TargetType),
+                    IsOwnPrediction = pred.UserId == userId
                 });
             }
 
@@ -112,7 +113,11 @@ namespace F1Predictions.Services
             if (!VotableTypes.Contains(prediction.WeeklyPrediction.PredictionType))
                 return ServiceResult<VoteResultDto>.Fail("This prediction type is not votable.");
 
-            // 3. Verify voter is a league member
+            // 3. Prevent voting on your own prediction
+            if (prediction.UserId == voterId)
+                return ServiceResult<VoteResultDto>.Fail("You cannot vote on your own prediction.");
+
+            // 4. Verify voter is a league member
             var isMember = await _context.Set<LeagueMember>()
                 .AnyAsync(lm => lm.LeagueId == prediction.LeagueId && lm.UserId == voterId);
 

@@ -172,6 +172,18 @@ namespace F1Predictions.Services
                         weeklyPointsTracker[weeklyKey] = 0;
                     weeklyPointsTracker[weeklyKey]++;
                 }
+                else
+                {
+                    // Insert 0 points for incorrect predictions
+                    _context.Set<UserPredictionPoints>().Add(new UserPredictionPoints
+                    {
+                        UserPredictionId = prediction.Id,
+                        PointsAwarded = 0,
+                        IsManuallyAssigned = false,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+
             }
 
             // 5. Add recalculated initial points back to WeeklyPoints
@@ -293,7 +305,7 @@ namespace F1Predictions.Services
                     result2.CorrectPredictions++;
                     result2.PointsAwarded++;
 
-                    // Insert UserPredictionPoints
+                    // Insert UserPredictionPoints with 1 point
                     _context.Set<UserPredictionPoints>().Add(new UserPredictionPoints
                     {
                         UserPredictionId = prediction.Id,
@@ -307,6 +319,17 @@ namespace F1Predictions.Services
                     if (!weeklyPointsTracker.ContainsKey(weeklyKey))
                         weeklyPointsTracker[weeklyKey] = 0;
                     weeklyPointsTracker[weeklyKey]++;
+                }
+                else
+                {
+                    // Insert UserPredictionPoints with 0 points for incorrect predictions
+                    _context.Set<UserPredictionPoints>().Add(new UserPredictionPoints
+                    {
+                        UserPredictionId = prediction.Id,
+                        PointsAwarded = 0,
+                        IsManuallyAssigned = false,
+                        CreatedAt = DateTime.UtcNow
+                    });
                 }
             }
 

@@ -16,6 +16,7 @@ namespace F1Predictions.Models.DTOs
         public bool IsResolved { get; set; }
         public bool? WasApproved { get; set; } // null = not resolved yet
         public int PointsValue { get; set; } // 1 for Driver/Text, 2 for Team
+        public bool IsOwnPrediction { get; set; } // true = this prediction belongs to the current user
     }
 
     public class CastVoteRequest
